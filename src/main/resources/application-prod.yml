@@ -1,0 +1,16 @@
+spring:
+  datasource:
+    url: jdbc:h2:file:./data/chatdb
+    username: sa
+    password: 
+    driver-class-name: org.h2.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update
+  sql:
+    init:
+      mode: always
+      continue-on-error: true
+      schema-locations: classpath:schema.sql
+      data-locations: 

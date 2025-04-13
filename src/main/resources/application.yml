@@ -1,6 +1,8 @@
 spring:
   application:
     name: chat
+  profiles:
+    active: dev
   datasource:
     url: jdbc:h2:mem:chatdb
     driver-class-name: org.h2.Driver
