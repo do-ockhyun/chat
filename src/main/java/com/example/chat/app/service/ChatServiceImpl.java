@@ -4,7 +4,6 @@ import com.example.chat.app.dto.ChatResponse;
 import com.example.chat.app.dto.ChatSessionResponse;
 import com.example.chat.domain.entity.ChatMessage;
 import com.example.chat.domain.entity.ChatSession;
-import com.example.chat.domain.entity.MessageType;
 import com.example.chat.domain.service.ChatDataService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

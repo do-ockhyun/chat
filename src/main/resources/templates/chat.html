@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>채팅</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <h1>채팅</h1>
+    <div>
+        <p>이메일: <span th:text="${email}"></span></p>
+    </div>
+    <div>
+        <h2>채팅 목록</h2>
+        <ul>
+            <li th:each="chatSession : ${sessions}">
+                <span th:text="${chatSession.title}"></span>
+            </li>
+        </ul>
+    </div>
+</body>
+</html> 

@@ -2,8 +2,6 @@ package com.example.chat.app.service;
 
 import com.example.chat.app.dto.ChatResponse;
 import com.example.chat.app.dto.ChatSessionResponse;
-import com.example.chat.app.dto.NewChatRequest;
-
 import java.util.List;
 
 public interface ChatService {
