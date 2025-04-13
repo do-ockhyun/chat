@@ -6,6 +6,11 @@ spring:
     driver-class-name: org.h2.Driver
     username: sa
     password: 
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+      data-locations: classpath:init.sql
   h2:
     console:
       enabled: true
@@ -15,6 +20,10 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+    defer-datasource-initialization: true
   thymeleaf:
     cache: false
 
@@ -25,3 +34,4 @@ logging:
   level:
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.springframework.jdbc.datasource.init: DEBUG
