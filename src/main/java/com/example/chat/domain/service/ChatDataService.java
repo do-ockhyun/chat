@@ -55,4 +55,9 @@ public class ChatDataService {
     public List<ChatMessage> findMessagesBySessionId(Long sessionId) {
         return chatMessageRepository.findByChatSessionIdOrderByCreatedAtAsc(sessionId);
     }
+
+    public ChatSession findSessionById(Long sessionId) {
+        return chatSessionRepository.findById(sessionId)
+                .orElseThrow(() -> new IllegalArgumentException("Session not found"));
+    }
 } 

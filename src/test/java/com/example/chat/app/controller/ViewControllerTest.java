@@ -49,6 +49,6 @@ class ViewControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("chat"))
                 .andExpect(model().attribute("email", email))
-                .andExpect(model().attributeExists("sessions"));
+                .andExpect(model().attributeExists("chatSessions"));
     }
 } 

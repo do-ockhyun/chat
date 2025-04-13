@@ -61,6 +61,16 @@ public class ChatServiceImpl implements ChatService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public boolean isSessionOwner(Long sessionId, String email) {
+        try {
+            ChatSession session = chatDataService.findSessionById(sessionId);
+            return session.getUserId().equals(email);
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
     private ChatSessionResponse convertToSessionResponse(ChatSession session) {
         return new ChatSessionResponse(
                 session.getId(),
