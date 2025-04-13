@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 public class ChatServiceImpl implements ChatService {
 
     private final ChatDataService chatDataService;
+    private final OpenAiService openAiService;
 
     @Override
     @Transactional
@@ -45,8 +46,8 @@ public class ChatServiceImpl implements ChatService {
         // 사용자 메시지 저장
         ChatMessage userMessage = chatDataService.saveUserMessage(sessionId, content);
         
-        // TODO: GPT API 호출 및 응답 처리
-        String gptResponse = "GPT 응답 예시"; // 임시 응답
+        // OpenAI API 호출하여 응답 생성
+        String gptResponse = openAiService.generateResponse(content);
         
         // GPT 응답 저장
         ChatMessage systemMessage = chatDataService.saveSystemMessage(sessionId, gptResponse);
