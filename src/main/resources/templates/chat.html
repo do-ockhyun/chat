@@ -37,6 +37,46 @@
             background-color: #DBEAFE;
             border-color: #93C5FD;
         }
+        
+        /* 로딩 애니메이션 관련 스타일 */
+        .loading-container {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+        }
+        
+        .loading-dots {
+            display: flex;
+            align-items: center;
+        }
+        
+        .dot {
+            width: 8px;
+            height: 8px;
+            margin: 0 4px;
+            background-color: #3B82F6;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite ease-in-out;
+        }
+        
+        .dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(0.8);
+                opacity: 0.6;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 1;
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -111,6 +151,18 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- 로딩 상태 표시 -->
+                <div v-if="isLoading" class="flex justify-start">
+                    <div class="bg-gray-100 rounded-lg p-3 loading-container">
+                        <div class="loading-dots">
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                        </div>
+                        <span class="ml-2 text-gray-600 text-sm">응답 생성 중...</span>
+                    </div>
+                </div>
             </div>
 
             <!-- 메시지 입력 영역 -->
@@ -163,6 +215,7 @@
                 const messages = ref([]); // 현재 세션의 메시지 목록
                 const newMessage = ref(''); // 새 메시지 입력값
                 const messageArea = ref(null); // 메시지 영역 DOM 참조
+                const isLoading = ref(false); // 로딩 상태 추가
                 
                 // 날짜 포맷팅 함수
                 const formatDate = (dateString) => {
@@ -292,9 +345,22 @@
                     };
                     messages.value.push(userMessage);
                     
+                    // 로딩 상태 시작
+                    isLoading.value = true;
+                    
+                    // 스크롤을 맨 아래로 이동
+                    setTimeout(() => {
+                        if (messageArea.value) {
+                            messageArea.value.scrollTop = messageArea.value.scrollHeight;
+                        }
+                    }, 0);
+                    
                     // API 호출하여 메시지 전송
                     axios.post(`/api/chat/${currentSession.value.id}/messages`, { content })
                         .then(response => {
+                            // 로딩 상태 종료
+                            isLoading.value = false;
+                            
                             // AI 응답 메시지 추가
                             messages.value.push(response.data);
                             
@@ -306,7 +372,23 @@
                             }, 0);
                         })
                         .catch(error => {
+                            // 로딩 상태 종료
+                            isLoading.value = false;
                             console.error('메시지 전송 중 오류 발생:', error);
+                            
+                            // 오류 메시지 표시
+                            messages.value.push({
+                                id: Date.now(),
+                                content: "죄송합니다. 응답을 생성하는 중에 오류가 발생했습니다. 다시 시도해 주세요.",
+                                messageType: 'ASSISTANT'
+                            });
+                            
+                            // 스크롤을 맨 아래로 이동
+                            setTimeout(() => {
+                                if (messageArea.value) {
+                                    messageArea.value.scrollTop = messageArea.value.scrollHeight;
+                                }
+                            }, 0);
                         });
                 };
                 
@@ -325,6 +407,7 @@
                     messages,
                     newMessage,
                     messageArea,
+                    isLoading,
                     formatDate,
                     loadChatSession,
                     createNewChat,
