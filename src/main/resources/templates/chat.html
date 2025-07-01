@@ -9,6 +9,8 @@
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <!-- Axios CDN 추가 (API 통신용) -->
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- Marked.js CDN 추가 (마크다운 변환용) -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         .suggestion-container {
             display: flex;
@@ -134,7 +136,7 @@
                     ]">
 
                         <!-- 일반 메시지 -->
-                        <p v-if="!message.isSuggestions" v-text="message.content"></p>
+                        <div v-if="!message.isSuggestions" v-html="renderMarkdown(message.content)"></div>
                         
                         <!-- 추천 질문 메시지 -->
                         <div v-if="message.isSuggestions" class="suggestion-container">
@@ -392,6 +394,11 @@
                         });
                 };
                 
+                // 마크다운 변환 함수
+                const renderMarkdown = (markdownText) => {
+                    return window.marked ? window.marked.parse(markdownText) : markdownText;
+                };
+                
                 // 컴포넌트 마운트 시 초기화
                 onMounted(() => {
                     // 초기화는 이미 ref 생성 시점에 Thymeleaf에서 처리됨
@@ -413,7 +420,8 @@
                     createNewChat,
 
                     sendMessage,
-                    usesuggestion
+                    usesuggestion,
+                    renderMarkdown
                 };
             }
         });
