@@ -11,6 +11,7 @@ public interface ChatService {
     void deleteSession(Long sessionId);
     boolean isSessionOwner(Long sessionId, String email);
     void updateSessionTitle(Long sessionId, String title);
+    void updateSessionPin(Long sessionId, boolean isPinned);
 
     // 채팅 메시지 관련
     ChatResponse sendMessage(Long sessionId, String content);

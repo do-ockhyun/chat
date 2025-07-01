@@ -39,6 +39,9 @@ public class ChatSession {
     @Column(nullable = false)
     private boolean isDeleted = false;
 
+    @Column(nullable = false)
+    private boolean isPinned = false;
+
     public ChatSession(String userId, String title) {
         this.userId = userId;
         this.title = title;

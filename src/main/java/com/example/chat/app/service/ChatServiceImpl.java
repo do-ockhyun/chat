@@ -77,6 +77,11 @@ public class ChatServiceImpl implements ChatService {
         chatDataService.updateSessionTitle(sessionId, title);
     }
 
+    @Override
+    public void updateSessionPin(Long sessionId, boolean isPinned) {
+        chatDataService.updateSessionPin(sessionId, isPinned);
+    }
+
     private ChatSessionResponse convertToSessionResponse(ChatSession session) {
         return new ChatSessionResponse(
                 session.getId(),

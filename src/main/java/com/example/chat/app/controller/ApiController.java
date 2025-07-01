@@ -113,4 +113,30 @@ public class ApiController {
         chatService.updateSessionTitle(sessionId, title);
         return ResponseEntity.ok().build();
     }
+
+    @PatchMapping("/{sessionId}/pin")
+    public ResponseEntity<Void> updateSessionPin(
+            @PathVariable Long sessionId,
+            @RequestBody boolean isPinned,
+            HttpSession session) {
+        String email = (String) session.getAttribute("email");
+        if (email == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        if (!chatService.isSessionOwner(sessionId, email)) {
+            return ResponseEntity.badRequest().build();
+        }
+        chatService.updateSessionPin(sessionId, isPinned);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/sessions")
+    public ResponseEntity<List<ChatSessionResponse>> getSessions(HttpSession session) {
+        String email = (String) session.getAttribute("email");
+        if (email == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        List<ChatSessionResponse> sessions = chatService.findSessionsByUserId(email);
+        return ResponseEntity.ok(sessions);
+    }
 } 

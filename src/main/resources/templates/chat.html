@@ -114,7 +114,9 @@
                         </button>
                         <!-- 컨텍스트 메뉴 -->
                         <div v-if="contextMenuOpenId === session.id" class="absolute z-20 right-8 top-2 bg-white text-gray-800 rounded shadow-lg w-32 py-1 border border-gray-200">
-                            <button class="w-full text-left px-4 py-2 hover:bg-gray-100" @click="onPin(session)">상단 고정</button>
+                            <button class="w-full text-left px-4 py-2 hover:bg-gray-100" @click="onPin(session)">
+                              {{ session.isPinned ? '고정 해제' : '상단 고정' }}
+                            </button>
                             <button class="w-full text-left px-4 py-2 hover:bg-gray-100" @click="onRename(session)">이름 변경</button>
                             <button class="w-full text-left px-4 py-2 hover:bg-gray-100" @click="onShare(session)">공유</button>
                             <button class="w-full text-left px-4 py-2 hover:bg-red-100 text-red-500" @click="onDelete(session)">삭제</button>
@@ -414,7 +416,21 @@
                 const toggleContextMenu = (id) => {
                     contextMenuOpenId.value = contextMenuOpenId.value === id ? null : id;
                 };
-                const onPin = (session) => { contextMenuOpenId.value = null; alert('상단 고정: ' + session.title); };
+                const onPin = (session) => {
+                    contextMenuOpenId.value = null;
+                    const newPinned = !session.isPinned;
+                    axios.patch(`/api/chat/${session.id}/pin`, newPinned, { headers: { 'Content-Type': 'application/json' } })
+                        .then(() => {
+                            // 서버에서 최신 목록을 다시 받아옴
+                            axios.get('/api/chat/sessions')
+                                .then(response => {
+                                    chatSessions.value = response.data;
+                                });
+                        })
+                        .catch(() => {
+                            alert('상단 고정/해제 중 오류가 발생했습니다.');
+                        });
+                };
                 const onRename = (session) => {
                     contextMenuOpenId.value = null;
                     renameModal.value.open = true;

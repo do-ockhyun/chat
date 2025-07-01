@@ -27,7 +27,7 @@ public class ChatDataService {
     }
 
     public List<ChatSession> findSessionsByUserId(String userId) {
-        return chatSessionRepository.findByUserIdAndIsDeletedFalseOrderByUpdatedAtDesc(userId);
+        return chatSessionRepository.findByUserIdAndIsDeletedFalseOrderByIsPinnedDescUpdatedAtDesc(userId);
     }
 
     @Transactional
@@ -43,6 +43,14 @@ public class ChatDataService {
         ChatSession session = chatSessionRepository.findById(sessionId)
             .orElseThrow(() -> new IllegalArgumentException("Session not found"));
         session.setTitle(title);
+        chatSessionRepository.save(session);
+    }
+
+    @Transactional
+    public void updateSessionPin(Long sessionId, boolean isPinned) {
+        ChatSession session = chatSessionRepository.findById(sessionId)
+            .orElseThrow(() -> new IllegalArgumentException("Session not found"));
+        session.setPinned(isPinned);
         chatSessionRepository.save(session);
     }
 
