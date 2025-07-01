@@ -27,12 +27,15 @@ public class ChatDataService {
     }
 
     public List<ChatSession> findSessionsByUserId(String userId) {
-        return chatSessionRepository.findByUserIdOrderByUpdatedAtDesc(userId);
+        return chatSessionRepository.findByUserIdAndIsDeletedFalseOrderByUpdatedAtDesc(userId);
     }
 
     @Transactional
     public void deleteSession(Long sessionId) {
-        chatSessionRepository.deleteById(sessionId);
+        ChatSession session = chatSessionRepository.findById(sessionId)
+            .orElseThrow(() -> new IllegalArgumentException("Session not found"));
+        session.setDeleted(true);
+        chatSessionRepository.save(session);
     }
 
     // 채팅 메시지 관련 메서드

@@ -94,14 +94,31 @@
             
             <div class="flex-1 overflow-y-auto">
                 <ul class="space-y-2">
-                    <li v-for="session in chatSessions" :key="session.id">
+                    <li v-for="session in chatSessions" :key="session.id" class="relative group">
                         <a href="#" 
                            @click.prevent="loadChatSession(session.id)"
-                           class="block p-2 rounded-md hover:bg-gray-700"
+                           class="block p-2 rounded-md hover:bg-gray-700 pr-10"
                            :class="{'bg-gray-700': currentSession && currentSession.id === session.id}">
                             <div class="text-sm font-medium" v-text="session.title"></div>
                             <div class="text-xs text-gray-400" v-text="formatDate(session.createdAt)"></div>
                         </a>
+                        <!-- 점 3개 버튼 -->
+                        <button @click.stop="toggleContextMenu(session.id)"
+                                class="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-600 focus:outline-none"
+                                :aria-label="'채팅 옵션'">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <circle cx="5" cy="12" r="2"/>
+                                <circle cx="12" cy="12" r="2"/>
+                                <circle cx="19" cy="12" r="2"/>
+                            </svg>
+                        </button>
+                        <!-- 컨텍스트 메뉴 -->
+                        <div v-if="contextMenuOpenId === session.id" class="absolute z-20 right-8 top-2 bg-white text-gray-800 rounded shadow-lg w-32 py-1 border border-gray-200">
+                            <button class="w-full text-left px-4 py-2 hover:bg-gray-100" @click="onPin(session)">상단 고정</button>
+                            <button class="w-full text-left px-4 py-2 hover:bg-gray-100" @click="onRename(session)">이름 변경</button>
+                            <button class="w-full text-left px-4 py-2 hover:bg-gray-100" @click="onShare(session)">공유</button>
+                            <button class="w-full text-left px-4 py-2 hover:bg-red-100 text-red-500" @click="onDelete(session)">삭제</button>
+                        </div>
                     </li>
                 </ul>
             </div>
@@ -218,6 +235,7 @@
                 const newMessage = ref(''); // 새 메시지 입력값
                 const messageArea = ref(null); // 메시지 영역 DOM 참조
                 const isLoading = ref(false); // 로딩 상태 추가
+                const contextMenuOpenId = ref(null);
                 
                 // 날짜 포맷팅 함수
                 const formatDate = (dateString) => {
@@ -297,35 +315,6 @@
                             };
                             chatSessions.value.push(newSession);
                             loadChatSession(newSession.id);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
                         })
                         .catch(error => {
                             console.error('새 채팅 생성 중 오류 발생:', error);
@@ -402,11 +391,38 @@
                 // 컴포넌트 마운트 시 초기화
                 onMounted(() => {
                     // 초기화는 이미 ref 생성 시점에 Thymeleaf에서 처리됨
-
-
+                    document.addEventListener('click', () => {
+                        contextMenuOpenId.value = null;
+                    });
                 });
                 
                 // 메서드와 상태 반환
+                const toggleContextMenu = (id) => {
+                    contextMenuOpenId.value = contextMenuOpenId.value === id ? null : id;
+                };
+                const onPin = (session) => { contextMenuOpenId.value = null; alert('상단 고정: ' + session.title); };
+                const onRename = (session) => { contextMenuOpenId.value = null; alert('이름 변경: ' + session.title); };
+                const onShare = (session) => { contextMenuOpenId.value = null; alert('공유: ' + session.title); };
+                const onDelete = (session) => {
+                    contextMenuOpenId.value = null;
+                    if (confirm('정말로 삭제하시겠습니까?')) {
+                        axios.delete(`/api/chat/${session.id}`)
+                            .then(() => {
+                                // 목록에서 삭제
+                                const idx = chatSessions.value.findIndex(s => s.id === session.id);
+                                if (idx !== -1) chatSessions.value.splice(idx, 1);
+                                // 현재 선택된 세션이 삭제된 경우 초기화
+                                if (currentSession.value && currentSession.value.id === session.id) {
+                                    currentSession.value = null;
+                                    messages.value = [];
+                                }
+                            })
+                            .catch(() => {
+                                alert('삭제 중 오류가 발생했습니다.');
+                            });
+                    }
+                };
+                
                 return {
                     email,
                     chatSessions,
@@ -418,10 +434,15 @@
                     formatDate,
                     loadChatSession,
                     createNewChat,
-
                     sendMessage,
                     usesuggestion,
-                    renderMarkdown
+                    renderMarkdown,
+                    contextMenuOpenId,
+                    toggleContextMenu,
+                    onPin,
+                    onRename,
+                    onShare,
+                    onDelete
                 };
             }
         });

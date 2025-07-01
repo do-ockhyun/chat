@@ -36,6 +36,9 @@ public class ChatSession {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(nullable = false)
+    private boolean isDeleted = false;
+
     public ChatSession(String userId, String title) {
         this.userId = userId;
         this.title = title;
