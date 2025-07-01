@@ -72,6 +72,11 @@ public class ChatServiceImpl implements ChatService {
         }
     }
 
+    @Override
+    public void updateSessionTitle(Long sessionId, String title) {
+        chatDataService.updateSessionTitle(sessionId, title);
+    }
+
     private ChatSessionResponse convertToSessionResponse(ChatSession session) {
         return new ChatSessionResponse(
                 session.getId(),

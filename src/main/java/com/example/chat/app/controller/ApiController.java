@@ -8,11 +8,14 @@ import com.example.chat.app.service.ChatService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/chat")
 @RequiredArgsConstructor
@@ -92,6 +95,22 @@ public class ApiController {
         }
         
         chatService.deleteSession(sessionId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{sessionId}/title")
+    public ResponseEntity<Void> updateSessionTitle(
+            @PathVariable Long sessionId,
+            @RequestBody String title,
+            HttpSession session) {
+        String email = (String) session.getAttribute("email");
+        if (email == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        if (!chatService.isSessionOwner(sessionId, email)) {
+            return ResponseEntity.badRequest().build();
+        }
+        chatService.updateSessionTitle(sessionId, title);
         return ResponseEntity.ok().build();
     }
 } 

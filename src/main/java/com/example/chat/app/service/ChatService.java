@@ -10,6 +10,7 @@ public interface ChatService {
     List<ChatSessionResponse> findSessionsByUserId(String userId);
     void deleteSession(Long sessionId);
     boolean isSessionOwner(Long sessionId, String email);
+    void updateSessionTitle(Long sessionId, String title);
 
     // 채팅 메시지 관련
     ChatResponse sendMessage(Long sessionId, String content);

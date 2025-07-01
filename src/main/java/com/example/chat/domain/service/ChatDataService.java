@@ -38,6 +38,14 @@ public class ChatDataService {
         chatSessionRepository.save(session);
     }
 
+    @Transactional
+    public void updateSessionTitle(Long sessionId, String title) {
+        ChatSession session = chatSessionRepository.findById(sessionId)
+            .orElseThrow(() -> new IllegalArgumentException("Session not found"));
+        session.setTitle(title);
+        chatSessionRepository.save(session);
+    }
+
     // 채팅 메시지 관련 메서드
     @Transactional
     public ChatMessage saveUserMessage(Long sessionId, String content) {

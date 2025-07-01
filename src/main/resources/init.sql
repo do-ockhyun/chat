@@ -7,9 +7,9 @@ DELETE FROM chat_messages;
 ALTER TABLE chat_messages ALTER COLUMN id RESTART WITH 1;
 
 -- 채팅 세션 초기 데이터
-INSERT INTO chat_sessions (user_id, title, created_at, updated_at) VALUES
-('user@example.com', '첫 번째 대화', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('user@example.com', '두 번째 대화', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO chat_sessions (user_id, title, created_at, updated_at, is_deleted) VALUES
+('user@example.com', '첫 번째 대화', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, false),
+('user@example.com', '두 번째 대화', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, false);
 
 -- 채팅 메시지 초기 데이터
 INSERT INTO chat_messages (session_id, content, message_type, created_at) VALUES
