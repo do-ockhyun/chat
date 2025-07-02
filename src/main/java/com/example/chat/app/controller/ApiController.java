@@ -139,4 +139,36 @@ public class ApiController {
         List<ChatSessionResponse> sessions = chatService.findSessionsByUserId(email);
         return ResponseEntity.ok(sessions);
     }
+
+    @PostMapping("/{sessionId}/share")
+    public ResponseEntity<String> shareSession(
+            @PathVariable Long sessionId,
+            HttpSession session) {
+        String email = (String) session.getAttribute("email");
+        if (email == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        try {
+            String shareToken = chatService.shareSession(sessionId, email);
+            return ResponseEntity.ok(shareToken);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/{sessionId}/unshare")
+    public ResponseEntity<Void> unshareSession(
+            @PathVariable Long sessionId,
+            HttpSession session) {
+        String email = (String) session.getAttribute("email");
+        if (email == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        try {
+            chatService.unshareSession(sessionId, email);
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
 } 

@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -82,12 +83,53 @@ public class ChatServiceImpl implements ChatService {
         chatDataService.updateSessionPin(sessionId, isPinned);
     }
 
+    @Override
+    public String shareSession(Long sessionId, String email) {
+        ChatSession session = chatDataService.findSessionById(sessionId);
+        if (!session.getUserId().equals(email)) {
+            throw new IllegalArgumentException("권한이 없습니다.");
+        }
+        String shareToken = UUID.randomUUID().toString().replace("-", "");
+        chatDataService.shareSession(sessionId, shareToken);
+        return shareToken;
+    }
+
+    @Override
+    public void unshareSession(Long sessionId, String email) {
+        ChatSession session = chatDataService.findSessionById(sessionId);
+        if (!session.getUserId().equals(email)) {
+            throw new IllegalArgumentException("권한이 없습니다.");
+        }
+        chatDataService.unshareSession(sessionId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ChatSessionResponse findSharedSessionByToken(String shareToken) {
+        ChatSession session = chatDataService.findSharedSessionByToken(shareToken);
+        if (session == null || !session.isShared()) {
+            throw new IllegalArgumentException("공유 세션이 존재하지 않습니다.");
+        }
+        return convertToSessionResponse(session);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ChatResponse> findMessagesByShareToken(String shareToken) {
+        List<ChatMessage> messages = chatDataService.findMessagesByShareToken(shareToken);
+        return messages.stream().map(this::convertToChatResponse).collect(java.util.stream.Collectors.toList());
+    }
+
     private ChatSessionResponse convertToSessionResponse(ChatSession session) {
         return new ChatSessionResponse(
                 session.getId(),
                 session.getTitle(),
                 session.getCreatedAt(),
-                session.getUpdatedAt()
+                session.getUpdatedAt(),
+                session.isPinned(),
+                session.isShared(),
+                session.getShareToken(),
+                session.getLastMessageAt()
         );
     }
 

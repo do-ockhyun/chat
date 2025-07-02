@@ -27,7 +27,7 @@ public class ChatDataService {
 
     @Transactional(readOnly = true)
     public List<ChatSession> findSessionsByUserId(String userId) {
-        return chatSessionRepository.findByUserIdAndIsDeletedFalseOrderByIsPinnedDescUpdatedAtDesc(userId);
+        return chatSessionRepository.findByUserIdAndIsDeletedFalseOrderByIsPinnedDescLastMessageAtDesc(userId);
     }
 
     public void deleteSession(Long sessionId) {
@@ -51,11 +51,36 @@ public class ChatDataService {
         chatSessionRepository.save(session);
     }
 
+    public ChatSession shareSession(Long sessionId, String shareToken) {
+        ChatSession session = chatSessionRepository.findById(sessionId)
+            .orElseThrow(() -> new IllegalArgumentException("Session not found"));
+        session.setShared(true);
+        session.setShareToken(shareToken);
+        session.setSharedAt(java.time.LocalDateTime.now());
+        return chatSessionRepository.save(session);
+    }
+
+    public ChatSession unshareSession(Long sessionId) {
+        ChatSession session = chatSessionRepository.findById(sessionId)
+            .orElseThrow(() -> new IllegalArgumentException("Session not found"));
+        session.setShared(false);
+        session.setShareToken(null);
+        session.setSharedAt(null);
+        return chatSessionRepository.save(session);
+    }
+
+    @Transactional(readOnly = true)
+    public ChatSession findSharedSessionByToken(String shareToken) {
+        return chatSessionRepository.findByShareTokenAndIsSharedTrue(shareToken);
+    }
+
     // 채팅 메시지 관련 메서드
     public ChatMessage saveUserMessage(Long sessionId, String content) {
         ChatSession session = chatSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new IllegalArgumentException("Session not found"));
         ChatMessage message = new ChatMessage(session, content, MessageType.USER);
+        session.setLastMessageAt(java.time.LocalDateTime.now());
+        chatSessionRepository.save(session);
         return chatMessageRepository.save(message);
     }
 
@@ -63,6 +88,8 @@ public class ChatDataService {
         ChatSession session = chatSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new IllegalArgumentException("Session not found"));
         ChatMessage message = new ChatMessage(session, content, MessageType.SYSTEM);
+        session.setLastMessageAt(java.time.LocalDateTime.now());
+        chatSessionRepository.save(session);
         return chatMessageRepository.save(message);
     }
 
@@ -75,5 +102,12 @@ public class ChatDataService {
     public ChatSession findSessionById(Long sessionId) {
         return chatSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new IllegalArgumentException("Session not found"));
+    }
+
+    @Transactional(readOnly = true)
+    public List<ChatMessage> findMessagesByShareToken(String shareToken) {
+        ChatSession session = findSharedSessionByToken(shareToken);
+        if (session == null) throw new IllegalArgumentException("공유 세션이 존재하지 않습니다.");
+        return chatMessageRepository.findByChatSessionIdOrderByCreatedAtAsc(session.getId());
     }
 } 

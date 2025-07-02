@@ -85,22 +85,21 @@
     <div id="app" class="flex h-screen">
         <!-- 좌측 사이드바 - 채팅 목록 -->
         <div class="w-64 bg-gray-800 text-white p-4 flex flex-col">
-            <div class="mb-6">
-                <h2 class="text-lg font-semibold mb-2">채팅 목록</h2>
-                <button @click="createNewChat" class="w-full bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded-md text-sm">
-                    + 새 채팅
-                </button>
+            <div class="mb-4">
+              <button @click="createNewChat" class="w-full bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded-md text-sm">
+                + 새 채팅
+              </button>
             </div>
-            
-            <div class="flex-1 overflow-y-auto">
-                <ul class="space-y-2">
-                    <li v-for="session in chatSessions" :key="session.id" class="relative group">
+            <div class="mb-6">
+                <h2 class="text-lg font-semibold mb-2">즐겨찾기</h2>
+                <ul v-if="pinnedSessions.length > 0" class="space-y-2">
+                    <li v-for="session in pinnedSessions" :key="session.id" class="relative group">
                         <a href="#" 
                            @click.prevent="loadChatSession(session.id)"
-                           class="block p-2 rounded-md hover:bg-gray-700 pr-10"
+                           class="block p-2 rounded-md hover:bg-gray-700 pr-10"초
                            :class="{'bg-gray-700': currentSession && currentSession.id === session.id}">
                             <div class="text-sm font-medium" v-text="session.title"></div>
-                            <div class="text-xs text-gray-400" v-text="formatDate(session.createdAt)"></div>
+                            <div class="text-xs text-gray-400" v-text="formatDate(session.lastMessageAt)"></div>
                         </a>
                         <!-- 점 3개 버튼 -->
                         <button @click.stop="toggleContextMenu(session.id)"
@@ -118,11 +117,50 @@
                               {{ session.isPinned ? '고정 해제' : '상단 고정' }}
                             </button>
                             <button class="w-full text-left px-4 py-2 hover:bg-gray-100" @click="onRename(session)">이름 변경</button>
-                            <button class="w-full text-left px-4 py-2 hover:bg-gray-100" @click="onShare(session)">공유</button>
+                            <button v-if="!session.isShared" class="w-full text-left px-4 py-2 hover:bg-gray-100" @click="onShare(session)">공유</button>
+                            <button v-else class="w-full text-left px-4 py-2 hover:bg-gray-100" @click="onUnshare(session)">공유 해제</button>
+                            <button v-if="session.isShared" class="w-full text-left px-4 py-2 hover:bg-gray-100" @click="onCopyShareLink(session)">공유 링크 복사</button>
                             <button class="w-full text-left px-4 py-2 hover:bg-red-100 text-red-500" @click="onDelete(session)">삭제</button>
                         </div>
                     </li>
                 </ul>
+                <div v-else class="text-gray-400 text-sm px-2 py-1">고정된 채팅이 없습니다.</div>
+            </div>
+            <div class="mb-6">
+                <h2 class="text-lg font-semibold mb-2">최근 항목</h2>
+                <ul v-if="unpinnedSessions.length > 0" class="space-y-2">
+                    <li v-for="session in unpinnedSessions" :key="session.id" class="relative group">
+                        <a href="#" 
+                           @click.prevent="loadChatSession(session.id)"
+                           class="block p-2 rounded-md hover:bg-gray-700 pr-10"
+                           :class="{'bg-gray-700': currentSession && currentSession.id === session.id}">
+                            <div class="text-sm font-medium" v-text="session.title"></div>
+                            <div class="text-xs text-gray-400" v-text="formatDate(session.lastMessageAt)"></div>
+                        </a>
+                        <!-- 점 3개 버튼 -->
+                        <button @click.stop="toggleContextMenu(session.id)"
+                                class="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-600 focus:outline-none"
+                                :aria-label="'채팅 옵션'">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <circle cx="5" cy="12" r="2"/>
+                                <circle cx="12" cy="12" r="2"/>
+                                <circle cx="19" cy="12" r="2"/>
+                            </svg>
+                        </button>
+                        <!-- 컨텍스트 메뉴 -->
+                        <div v-if="contextMenuOpenId === session.id" class="absolute z-20 right-8 top-2 bg-white text-gray-800 rounded shadow-lg w-32 py-1 border border-gray-200">
+                            <button class="w-full text-left px-4 py-2 hover:bg-gray-100" @click="onPin(session)">
+                              {{ session.isPinned ? '고정 해제' : '상단 고정' }}
+                            </button>
+                            <button class="w-full text-left px-4 py-2 hover:bg-gray-100" @click="onRename(session)">이름 변경</button>
+                            <button v-if="!session.isShared" class="w-full text-left px-4 py-2 hover:bg-gray-100" @click="onShare(session)">공유</button>
+                            <button v-else class="w-full text-left px-4 py-2 hover:bg-gray-100" @click="onUnshare(session)">공유 해제</button>
+                            <button v-if="session.isShared" class="w-full text-left px-4 py-2 hover:bg-gray-100" @click="onCopyShareLink(session)">공유 링크 복사</button>
+                            <button class="w-full text-left px-4 py-2 hover:bg-red-100 text-red-500" @click="onDelete(session)">삭제</button>
+                        </div>
+                    </li>
+                </ul>
+                <div v-else class="text-gray-400 text-sm px-2 py-1">최근 채팅이 없습니다.</div>
             </div>
             
             <div class="pt-4 border-t border-gray-700">
@@ -237,13 +275,15 @@
 
     <script th:inline="javascript">
         // Vue 3 앱 생성
-        const { createApp, ref, onMounted } = Vue;
+        const { createApp, ref, onMounted, computed } = Vue;
         
         const app = createApp({
             setup() {
                 // 반응형 상태 정의
                 const email = ref(/*[[${email}]]*/ '');
                 const chatSessions = ref(/*[[${chatSessions}]]*/ []);
+                const pinnedSessions = computed(() => chatSessions.value.filter(s => s.isPinned));
+                const unpinnedSessions = computed(() => chatSessions.value.filter(s => !s.isPinned));
                 const currentSession = ref(null); // 현재 선택된 세션
                 const messages = ref([]); // 현재 세션의 메시지 목록
                 const newMessage = ref(''); // 새 메시지 입력값
@@ -327,7 +367,7 @@
                             const newSession = {
                                 id: response.data,
                                 title: '새로운 대화',
-                                createdAt: new Date().toISOString()
+                                updatedAt: new Date().toISOString()
                             };
                             chatSessions.value.push(newSession);
                             loadChatSession(newSession.id);
@@ -342,7 +382,7 @@
                     if (!newMessage.value.trim() || !currentSession.value) return;
                     
                     const content = newMessage.value;
-                    newMessage.value = ''; // 입력 필드 초기화
+                    newMessage.value = '';
                     
                     // 사용자 메시지 추가
                     const userMessage = {
@@ -352,26 +392,32 @@
                     };
                     messages.value.push(userMessage);
                     
-                    // 로딩 상태 시작
                     isLoading.value = true;
                     
-                    // 스크롤을 맨 아래로 이동
                     setTimeout(() => {
                         if (messageArea.value) {
                             messageArea.value.scrollTop = messageArea.value.scrollHeight;
                         }
                     }, 0);
                     
-                    // API 호출하여 메시지 전송
                     axios.post(`/api/chat/${currentSession.value.id}/messages`, { content })
                         .then(response => {
-                            // 로딩 상태 종료
                             isLoading.value = false;
-                            
-                            // AI 응답 메시지 추가
                             messages.value.push(response.data);
                             
-                            // 스크롤을 맨 아래로 이동
+                            // 메시지 응답의 createdAt을 lastMessageAt으로 사용
+                            const lastMsgTime = response.data.createdAt;
+                            currentSession.value.lastMessageAt = lastMsgTime;
+                            const idx = chatSessions.value.findIndex(s => s.id === currentSession.value.id);
+                            if (idx !== -1) {
+                                chatSessions.value[idx].lastMessageAt = lastMsgTime;
+                            }
+                            // 목록 정렬 (고정 우선, 그 다음 lastMessageAt 내림차순)
+                            chatSessions.value.sort((a, b) => {
+                                if (a.isPinned !== b.isPinned) return b.isPinned - a.isPinned;
+                                return new Date(b.lastMessageAt) - new Date(a.lastMessageAt);
+                            });
+                            
                             setTimeout(() => {
                                 if (messageArea.value) {
                                     messageArea.value.scrollTop = messageArea.value.scrollHeight;
@@ -379,18 +425,13 @@
                             }, 0);
                         })
                         .catch(error => {
-                            // 로딩 상태 종료
                             isLoading.value = false;
                             console.error('메시지 전송 중 오류 발생:', error);
-                            
-                            // 오류 메시지 표시
                             messages.value.push({
                                 id: Date.now(),
                                 content: "죄송합니다. 응답을 생성하는 중에 오류가 발생했습니다. 다시 시도해 주세요.",
                                 messageType: 'ASSISTANT'
                             });
-                            
-                            // 스크롤을 맨 아래로 이동
                             setTimeout(() => {
                                 if (messageArea.value) {
                                     messageArea.value.scrollTop = messageArea.value.scrollHeight;
@@ -437,7 +478,48 @@
                     renameModal.value.sessionId = session.id;
                     renameModal.value.title = session.title;
                 };
-                const onShare = (session) => { contextMenuOpenId.value = null; alert('공유: ' + session.title); };
+                const onShare = (session) => {
+                    contextMenuOpenId.value = null;
+                    axios.post(`/api/chat/${session.id}/share`)
+                        .then(response => {
+                            const shareToken = response.data;
+                            session.isShared = true;
+                            session.shareToken = shareToken;
+                            const shareUrl = `${window.location.origin}/share/${shareToken}`;
+                            // clipboard 복사 시도
+                            navigator.clipboard.writeText(shareUrl)
+                                .then(() => {
+                                    alert('공유 링크가 복사되었습니다!');
+                                })
+                                .catch(() => {
+                                    // 복사 실패 시 링크를 직접 보여줌
+                                    prompt('복사 권한이 거부되었습니다. 아래 링크를 수동으로 복사하세요.', shareUrl);
+                                });
+                        })
+                        .catch(error => {
+                            alert('공유 중 오류가 발생했습니다.');
+                        });
+                };
+                const onUnshare = (session) => {
+                    contextMenuOpenId.value = null;
+                    axios.post(`/api/chat/${session.id}/unshare`)
+                        .then(() => {
+                            session.isShared = false;
+                            session.shareToken = null;
+                            alert('공유가 해제되었습니다.');
+                        })
+                        .catch(() => {
+                            alert('공유 해제 중 오류가 발생했습니다.');
+                        });
+                };
+                const onCopyShareLink = (session) => {
+                    if (session.shareToken) {
+                        const shareUrl = `${window.location.origin}/share/${session.shareToken}`;
+                        navigator.clipboard.writeText(shareUrl).then(() => {
+                            alert('공유 링크가 복사되었습니다!');
+                        });
+                    }
+                };
                 const onDelete = (session) => {
                     contextMenuOpenId.value = null;
                     if (confirm('정말로 삭제하시겠습니까?')) {
@@ -485,6 +567,8 @@
                 return {
                     email,
                     chatSessions,
+                    pinnedSessions,
+                    unpinnedSessions,
                     currentSession,
                     messages,
                     newMessage,
@@ -501,6 +585,8 @@
                     onPin,
                     onRename,
                     onShare,
+                    onUnshare,
+                    onCopyShareLink,
                     onDelete,
                     renameModal,
                     closeRenameModal,

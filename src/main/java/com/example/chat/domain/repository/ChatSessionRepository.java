@@ -9,4 +9,6 @@ import java.util.List;
 @Repository
 public interface ChatSessionRepository extends JpaRepository<ChatSession, Long> {
     List<ChatSession> findByUserIdAndIsDeletedFalseOrderByIsPinnedDescUpdatedAtDesc(String userId);
+    ChatSession findByShareTokenAndIsSharedTrue(String shareToken);
+    List<ChatSession> findByUserIdAndIsDeletedFalseOrderByIsPinnedDescLastMessageAtDesc(String userId);
 } 

@@ -13,7 +13,11 @@ CREATE TABLE IF NOT EXISTS chat_sessions (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
-    is_pinned BOOLEAN NOT NULL DEFAULT FALSE
+    is_pinned BOOLEAN NOT NULL DEFAULT FALSE,
+    is_shared BOOLEAN NOT NULL DEFAULT FALSE,
+    share_token VARCHAR(64) UNIQUE,
+    shared_at TIMESTAMP,
+    last_message_at TIMESTAMP
 );
 
 -- 채팅 메시지 테이블

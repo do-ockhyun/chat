@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>공유된 채팅 세션</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen flex items-center justify-center">
+        <div class="max-w-lg w-full space-y-8 p-8 bg-white rounded-lg shadow">
+            <div>
+                <h1 class="text-2xl font-bold text-center text-gray-900">공유된 채팅 세션</h1>
+            </div>
+            <div th:if="${sharedSession != null}">
+                <div class="mb-4">
+                    <div class="text-lg font-semibold">[[${sharedSession.title}]]</div>
+                    <div class="text-sm text-gray-500">생성일: [[${#temporals.format(sharedSession.createdAt, 'yyyy-MM-dd HH:mm')}]]</div>
+                </div>
+                <div class="mt-6 text-gray-700">
+                    <p>이 채팅 세션은 공유 링크를 통해 읽기 전용으로 공개되었습니다.</p>
+                </div>
+                <div class="mt-8">
+                    <h2 class="text-md font-bold mb-2">메시지 목록</h2>
+                    <div th:if="${#lists.isEmpty(messages)}" class="text-gray-400">메시지가 없습니다.</div>
+                    <ul th:if="${!#lists.isEmpty(messages)}" class="space-y-3">
+                        <li th:each="msg : ${messages}">
+                            <div th:classappend="${msg.messageType == 'USER'} ? 'text-right' : 'text-left'">
+                                <span th:text="${msg.content}" class="inline-block px-4 py-2 rounded-lg"
+                                      th:classappend="${msg.messageType == 'USER'} ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'"></span>
+                                <div class="text-xs text-gray-400 mt-1" th:text="${#temporals.format(msg.createdAt, 'yyyy-MM-dd HH:mm')}"></div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div th:if="${sharedSession == null}">
+                <div class="text-red-500 font-semibold">공유 세션을 찾을 수 없습니다.</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

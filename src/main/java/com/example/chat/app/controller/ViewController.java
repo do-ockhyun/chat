@@ -1,6 +1,7 @@
 package com.example.chat.app.controller;
 
 import com.example.chat.app.dto.ChatSessionResponse;
+import com.example.chat.app.dto.ChatResponse;
 import com.example.chat.app.service.ChatService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,6 +11,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PathVariable;
 import java.util.List;
 
 import jakarta.servlet.http.HttpSession;
@@ -37,5 +39,19 @@ public class ViewController {
         model.addAttribute("email", email);
         model.addAttribute("chatSessions", chatSessions);
         return "chat";
+    }
+
+    @GetMapping("/share/{shareToken}")
+    public String viewSharedSession(@PathVariable String shareToken, Model model) {
+        try {
+            ChatSessionResponse session = chatService.findSharedSessionByToken(shareToken);
+            java.util.List<ChatResponse> messages = chatService.findMessagesByShareToken(shareToken);
+            model.addAttribute("sharedSession", session);
+            model.addAttribute("messages", messages);
+            return "shared-session";
+        } catch (IllegalArgumentException e) {
+            model.addAttribute("error", e.getMessage());
+            return "error";
+        }
     }
 } 

@@ -42,6 +42,16 @@ public class ChatSession {
     @Column(nullable = false)
     private boolean isPinned = false;
 
+    @Column(nullable = false)
+    private boolean isShared = false;
+
+    @Column(unique = true)
+    private String shareToken;
+
+    private LocalDateTime sharedAt;
+
+    private LocalDateTime lastMessageAt;
+
     public ChatSession(String userId, String title) {
         this.userId = userId;
         this.title = title;
