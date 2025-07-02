@@ -38,8 +38,8 @@ class ViewControllerTest {
     void chat() throws Exception {
         // given
         String email = "test@example.com";
-        ChatSessionResponse session1 = new ChatSessionResponse(1L, "Chat 1", null, null, false, false, null);
-        ChatSessionResponse session2 = new ChatSessionResponse(2L, "Chat 2", null, null, false, false, null);
+        ChatSessionResponse session1 = new ChatSessionResponse(1L, "Chat 1", null, null, false, false, null, null);
+        ChatSessionResponse session2 = new ChatSessionResponse(2L, "Chat 2", null, null, false, false, null, null);
         given(chatService.findSessionsByUserId(email))
                 .willReturn(Arrays.asList(session1, session2));
 

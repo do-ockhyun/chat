@@ -44,7 +44,7 @@ class ApiControllerTest {
         NewChatRequest request = new NewChatRequest();
         request.setEmail(TEST_EMAIL);
         request.setTitle("Test Chat");
-        ChatSessionResponse response = new ChatSessionResponse(1L, "Test Chat", null, null, false, false, null);
+        ChatSessionResponse response = new ChatSessionResponse(1L, "Test Chat", null, null, false, false, null, null);
         given(chatService.createSession(eq(request.getEmail()), eq(request.getTitle())))
                 .willReturn(response);
 
