@@ -14,20 +14,20 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+@Transactional
 public class ChatServiceImpl implements ChatService {
 
     private final ChatDataService chatDataService;
     private final OpenAiService openAiService;
 
     @Override
-    @Transactional
     public ChatSessionResponse createSession(String email, String title) {
         ChatSession session = chatDataService.createSession(email, title);
         return convertToSessionResponse(session);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ChatSessionResponse> findSessionsByUserId(String userId) {
         return chatDataService.findSessionsByUserId(userId).stream()
                 .map(this::convertToSessionResponse)
@@ -35,13 +35,11 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
-    @Transactional
     public void deleteSession(Long sessionId) {
         chatDataService.deleteSession(sessionId);
     }
 
     @Override
-    @Transactional
     public ChatResponse sendMessage(Long sessionId, String content) {
         // 사용자 메시지 저장
         ChatMessage userMessage = chatDataService.saveUserMessage(sessionId, content);
@@ -56,6 +54,7 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ChatResponse> findMessagesBySessionId(Long sessionId) {
         return chatDataService.findMessagesBySessionId(sessionId).stream()
                 .map(this::convertToChatResponse)
@@ -63,6 +62,7 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public boolean isSessionOwner(Long sessionId, String email) {
         try {
             ChatSession session = chatDataService.findSessionById(sessionId);
