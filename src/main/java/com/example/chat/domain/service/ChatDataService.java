@@ -27,7 +27,7 @@ public class ChatDataService {
 
     @Transactional(readOnly = true)
     public List<ChatSession> findSessionsByUserId(String userId) {
-        return chatSessionRepository.findByUserIdAndIsDeletedFalseOrderByIsPinnedDescLastMessageAtDesc(userId);
+        return chatSessionRepository.findRecentByUserIdLastMsg(userId);
     }
 
     public void deleteSession(Long sessionId) {
@@ -71,7 +71,7 @@ public class ChatDataService {
 
     @Transactional(readOnly = true)
     public ChatSession findSharedSessionByToken(String shareToken) {
-        return chatSessionRepository.findByShareTokenAndIsSharedTrue(shareToken);
+        return chatSessionRepository.findByShareToken(shareToken);
     }
 
     // 채팅 메시지 관련 메서드

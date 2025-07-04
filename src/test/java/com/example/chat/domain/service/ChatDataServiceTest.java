@@ -61,7 +61,7 @@ class ChatDataServiceTest {
         ChatSession session1 = new ChatSession(userId, "Chat 1");
         ChatSession session2 = new ChatSession(userId, "Chat 2");
         List<ChatSession> expectedSessions = Arrays.asList(session1, session2);
-        given(chatSessionRepository.findByUserIdAndIsDeletedFalseOrderByIsPinnedDescUpdatedAtDesc(userId)).willReturn(expectedSessions);
+        given(chatSessionRepository.findRecentByUserId(userId)).willReturn(expectedSessions);
 
         // when
         List<ChatSession> result = chatDataService.findSessionsByUserId(userId);
