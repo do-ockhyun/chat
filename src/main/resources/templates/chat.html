@@ -132,6 +132,23 @@
             </div>
             <div class="mb-6">
                 <h2 class="text-lg font-semibold mb-2">최근 항목</h2>
+                <!-- 임시 세션 표시 -->
+                <div v-if="chatSessions.filter(s => s.isTemporary).length > 0" class="mb-4">
+                    <div class="text-xs font-medium text-gray-400 uppercase tracking-wide px-2 mb-2">새 채팅</div>
+                    <ul class="space-y-1">
+                        <li v-for="session in chatSessions.filter(s => s.isTemporary)" :key="session.id" class="relative group">
+                            <a href="#" 
+                               @click.prevent="loadChatSession(session.id)"
+                               class="block p-2 rounded-md hover:bg-gray-700 pr-10 bg-gray-600"
+                               :class="{'bg-gray-700': currentSession && currentSession.id === session.id}">
+                                <div class="text-sm font-medium" v-text="session.title"></div>
+                                <div class="text-xs text-gray-300">메시지를 입력하세요...</div>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- 기존 세션들 -->
                 <div v-if="Object.keys(groupedUnpinnedSessions).length > 0" class="space-y-4">
                     <div v-for="(group, date) in groupedUnpinnedSessions" :key="date" class="space-y-2">
                         <div class="text-xs font-medium text-gray-400 uppercase tracking-wide px-2" v-text="date"></div>
@@ -169,7 +186,7 @@
                         </ul>
                     </div>
                 </div>
-                <div v-else class="text-gray-400 text-sm px-2 py-1">최근 채팅이 없습니다.</div>
+                <div v-if="Object.keys(groupedUnpinnedSessions).length === 0 && chatSessions.filter(s => s.isTemporary).length === 0" class="text-gray-400 text-sm px-2 py-1">최근 채팅이 없습니다.</div>
             </div>
             
             <div class="pt-4 border-t border-gray-700">
@@ -292,7 +309,7 @@
                 const email = ref(/*[[${email}]]*/ '');
                 const chatSessions = ref(/*[[${chatSessions}]]*/ []);
                 const pinnedSessions = computed(() => chatSessions.value.filter(s => s.isPinned));
-                const unpinnedSessions = computed(() => chatSessions.value.filter(s => !s.isPinned));
+                const unpinnedSessions = computed(() => chatSessions.value.filter(s => !s.isPinned && !s.isTemporary));
                 
                 // 날짜별 그룹핑 함수
                 const groupSessionsByDate = (sessions) => {
@@ -375,7 +392,47 @@
                 // 채팅 세션 로드 함수
                 const loadChatSession = (sessionId) => {
                     renameModal.value.open = false;
-                    // API 호출하여 메시지 목록 가져오기
+                    
+                    // sessionId를 문자열로 변환
+                    const sessionIdStr = String(sessionId);
+                    
+                    // 임시 세션인 경우
+                    if (sessionIdStr.startsWith('temp_')) {
+                        currentSession.value = chatSessions.value.find(s => s.id === sessionId);
+                        messages.value = [];
+                        
+                        // 환영 메시지
+                        const welcomeMessage = {
+                            id: Date.now(),
+                            content: "안녕하세요! AI 채팅 도우미입니다. 무엇을 도와드릴까요?",
+                            messageType: 'ASSISTANT'
+                        };
+                        messages.value.push(welcomeMessage);
+                        
+                        // 추천 질문 메시지
+                        const suggestionsMessage = {
+                            id: Date.now() + 1,
+                            messageType: 'ASSISTANT',
+                            isSuggestions: true,
+                            suggestions: [
+                                "오늘의 날씨는 어때요?",
+                                "맛있는 저녁 메뉴 추천해주세요",
+                                "주식 투자에 대해 알려주세요",
+                                "효율적인 시간 관리 방법이 궁금해요"
+                            ]
+                        };
+                        messages.value.push(suggestionsMessage);
+                        
+                        // 스크롤을 맨 아래로 이동
+                        setTimeout(() => {
+                            if (messageArea.value) {
+                                messageArea.value.scrollTop = messageArea.value.scrollHeight;
+                            }
+                        }, 0);
+                        return;
+                    }
+                    
+                    // 실제 세션인 경우 API 호출
                     axios.get(`/api/chat/${sessionId}/messages`)
                         .then(response => {
                             messages.value = response.data;
@@ -420,32 +477,126 @@
                 
                 // 새 채팅 생성 함수
                 const createNewChat = () => {
-                    axios.post('/api/chat/new', {
-                        email: email.value,
-                        title: '새로운 대화'
-                    })
-                        .then(response => {
-                            const newSession = {
-                                id: response.data,
-                                title: '새로운 대화',
-                                updatedAt: new Date().toISOString()
-                            };
-                            chatSessions.value.push(newSession);
-                            loadChatSession(newSession.id);
-                        })
-                        .catch(error => {
-                            console.error('새 채팅 생성 중 오류 발생:', error);
-                        });
+                    // 임시 세션 생성 (서버에 저장하지 않음)
+                    const tempSession = {
+                        id: 'temp_' + Date.now(),
+                        title: '새로운 대화',
+                        lastMessageAt: new Date().toISOString(),
+                        isPinned: false,
+                        isShared: false,
+                        isTemporary: true // 임시 세션 표시
+                    };
+                    
+                    // 임시 세션을 목록에 추가
+                    chatSessions.value.unshift(tempSession);
+                    
+                    // 임시 세션 로드
+                    loadChatSession(tempSession.id);
                 };
                 
                 // 메시지 전송 함수
                 const sendMessage = () => {
-                    if (!newMessage.value.trim() || !currentSession.value) return;
+                    if (!newMessage.value.trim()) return;
                     
                     const content = newMessage.value;
                     newMessage.value = '';
                     
-                    // 사용자 메시지 추가
+                    // 현재 세션이 없거나 임시 세션인 경우
+                    if (!currentSession.value || currentSession.value.isTemporary) {
+                        // 임시 세션이면 실제 세션 생성
+                        if (currentSession.value && currentSession.value.isTemporary) {
+                            // 사용자 메시지 추가 (임시로)
+                            const userMessage = {
+                                id: Date.now(),
+                                content: content,
+                                messageType: 'USER'
+                            };
+                            messages.value.push(userMessage);
+                            isLoading.value = true;
+                            
+                            // 실제 채팅방 생성
+                            axios.post('/api/chat/new', {
+                                email: email.value,
+                                title: content.length > 30 ? content.substring(0, 30) + '...' : content
+                            })
+                                .then(response => {
+                                    const newSessionId = response.data;
+                                    
+                                    // 메시지 전송
+                                    return axios.post(`/api/chat/${newSessionId}/messages`, { content });
+                                })
+                                .then(response => {
+                                    isLoading.value = false;
+                                    
+                                    // 임시 세션을 실제 세션으로 교체
+                                    const tempIndex = chatSessions.value.findIndex(s => s.id === currentSession.value.id);
+                                    if (tempIndex !== -1) {
+                                        const newSession = {
+                                            id: response.data.chatSessionId || response.data.id,
+                                            title: content.length > 30 ? content.substring(0, 30) + '...' : content,
+                                            lastMessageAt: response.data.createdAt,
+                                            isPinned: false,
+                                            isShared: false,
+                                            isTemporary: false
+                                        };
+                                        
+                                        chatSessions.value[tempIndex] = newSession;
+                                        currentSession.value = newSession;
+                                        
+                                        // 메시지 목록 업데이트 - 사용자 메시지와 AI 응답 모두 포함
+                                        const userMessage = {
+                                            id: Date.now() - 1, // AI 응답보다 이전 ID
+                                            content: content,
+                                            messageType: 'USER'
+                                        };
+                                        messages.value = [userMessage, response.data];
+                                    }
+                                    
+                                    // 목록 정렬
+                                    chatSessions.value.sort((a, b) => {
+                                        if (a.isPinned !== b.isPinned) return b.isPinned - a.isPinned;
+                                        return new Date(b.lastMessageAt) - new Date(a.lastMessageAt);
+                                    });
+                                    
+                                    setTimeout(() => {
+                                        if (messageArea.value) {
+                                            messageArea.value.scrollTop = messageArea.value.scrollHeight;
+                                        }
+                                    }, 0);
+                                })
+                                .catch(error => {
+                                    isLoading.value = false;
+                                    console.error('채팅 생성 또는 메시지 전송 중 오류 발생:', error);
+                                    
+                                    // 에러 메시지 추가
+                                    messages.value.push({
+                                        id: Date.now(),
+                                        content: "죄송합니다. 응답을 생성하는 중에 오류가 발생했습니다. 다시 시도해 주세요.",
+                                        messageType: 'ASSISTANT'
+                                    });
+                                    
+                                    // 임시 세션 제거
+                                    const tempIndex = chatSessions.value.findIndex(s => s.isTemporary);
+                                    if (tempIndex !== -1) {
+                                        chatSessions.value.splice(tempIndex, 1);
+                                        currentSession.value = null;
+                                        messages.value = [];
+                                    }
+                                    
+                                    setTimeout(() => {
+                                        if (messageArea.value) {
+                                            messageArea.value.scrollTop = messageArea.value.scrollHeight;
+                                        }
+                                    }, 0);
+                                });
+                        } else {
+                            // 세션이 없는 경우 새 채팅 생성
+                            createNewChat();
+                        }
+                        return;
+                    }
+                    
+                    // 기존 세션에 메시지 전송
                     const userMessage = {
                         id: Date.now(),
                         content: content,
