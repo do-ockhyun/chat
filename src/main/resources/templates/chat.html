@@ -132,38 +132,43 @@
             </div>
             <div class="mb-6">
                 <h2 class="text-lg font-semibold mb-2">최근 항목</h2>
-                <ul v-if="unpinnedSessions.length > 0" class="space-y-2">
-                    <li v-for="session in unpinnedSessions" :key="session.id" class="relative group">
-                        <a href="#" 
-                           @click.prevent="loadChatSession(session.id)"
-                           class="block p-2 rounded-md hover:bg-gray-700 pr-10"
-                           :class="{'bg-gray-700': currentSession && currentSession.id === session.id}">
-                            <div class="text-sm font-medium" v-text="session.title"></div>
-                            <div class="text-xs text-gray-400" v-text="formatDate(session.lastMessageAt)"></div>
-                        </a>
-                        <!-- 점 3개 버튼 -->
-                        <button @click.stop="toggleContextMenu(session.id)"
-                                class="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-600 focus:outline-none"
-                                :aria-label="'채팅 옵션'">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <circle cx="5" cy="12" r="2"/>
-                                <circle cx="12" cy="12" r="2"/>
-                                <circle cx="19" cy="12" r="2"/>
-                            </svg>
-                        </button>
-                        <!-- 컨텍스트 메뉴 -->
-                        <div v-if="contextMenuOpenId === session.id" class="absolute z-20 right-8 top-2 bg-white text-gray-800 rounded shadow-lg w-32 py-1 border border-gray-200">
-                            <button class="w-full text-left px-4 py-2 hover:bg-gray-100" @click="onPin(session)">
-                              {{ session.isPinned ? '고정 해제' : '상단 고정' }}
-                            </button>
-                            <button class="w-full text-left px-4 py-2 hover:bg-gray-100" @click="onRename(session)">이름 변경</button>
-                            <button v-if="!session.isShared" class="w-full text-left px-4 py-2 hover:bg-gray-100" @click="onShare(session)">공유</button>
-                            <button v-else class="w-full text-left px-4 py-2 hover:bg-gray-100" @click="onUnshare(session)">공유 해제</button>
-                            <button v-if="session.isShared" class="w-full text-left px-4 py-2 hover:bg-gray-100" @click="onCopyShareLink(session)">공유 링크 복사</button>
-                            <button class="w-full text-left px-4 py-2 hover:bg-red-100 text-red-500" @click="onDelete(session)">삭제</button>
-                        </div>
-                    </li>
-                </ul>
+                <div v-if="Object.keys(groupedUnpinnedSessions).length > 0" class="space-y-4">
+                    <div v-for="(group, date) in groupedUnpinnedSessions" :key="date" class="space-y-2">
+                        <div class="text-xs font-medium text-gray-400 uppercase tracking-wide px-2" v-text="date"></div>
+                        <ul class="space-y-1">
+                            <li v-for="session in group" :key="session.id" class="relative group">
+                                <a href="#" 
+                                   @click.prevent="loadChatSession(session.id)"
+                                   class="block p-2 rounded-md hover:bg-gray-700 pr-10"
+                                   :class="{'bg-gray-700': currentSession && currentSession.id === session.id}">
+                                    <div class="text-sm font-medium" v-text="session.title"></div>
+                                    <div class="text-xs text-gray-400" v-text="formatDate(session.lastMessageAt)"></div>
+                                </a>
+                                <!-- 점 3개 버튼 -->
+                                <button @click.stop="toggleContextMenu(session.id)"
+                                        class="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-600 focus:outline-none"
+                                        :aria-label="'채팅 옵션'">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <circle cx="5" cy="12" r="2"/>
+                                        <circle cx="12" cy="12" r="2"/>
+                                        <circle cx="19" cy="12" r="2"/>
+                                    </svg>
+                                </button>
+                                <!-- 컨텍스트 메뉴 -->
+                                <div v-if="contextMenuOpenId === session.id" class="absolute z-20 right-8 top-2 bg-white text-gray-800 rounded shadow-lg w-32 py-1 border border-gray-200">
+                                    <button class="w-full text-left px-4 py-2 hover:bg-gray-100" @click="onPin(session)">
+                                      {{ session.isPinned ? '고정 해제' : '상단 고정' }}
+                                    </button>
+                                    <button class="w-full text-left px-4 py-2 hover:bg-gray-100" @click="onRename(session)">이름 변경</button>
+                                    <button v-if="!session.isShared" class="w-full text-left px-4 py-2 hover:bg-gray-100" @click="onShare(session)">공유</button>
+                                    <button v-else class="w-full text-left px-4 py-2 hover:bg-gray-100" @click="onUnshare(session)">공유 해제</button>
+                                    <button v-if="session.isShared" class="w-full text-left px-4 py-2 hover:bg-gray-100" @click="onCopyShareLink(session)">공유 링크 복사</button>
+                                    <button class="w-full text-left px-4 py-2 hover:bg-red-100 text-red-500" @click="onDelete(session)">삭제</button>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
                 <div v-else class="text-gray-400 text-sm px-2 py-1">최근 채팅이 없습니다.</div>
             </div>
             
@@ -288,6 +293,58 @@
                 const chatSessions = ref(/*[[${chatSessions}]]*/ []);
                 const pinnedSessions = computed(() => chatSessions.value.filter(s => s.isPinned));
                 const unpinnedSessions = computed(() => chatSessions.value.filter(s => !s.isPinned));
+                
+                // 날짜별 그룹핑 함수
+                const groupSessionsByDate = (sessions) => {
+                    const groups = {};
+                    const today = new Date();
+                    const yesterday = new Date(today);
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    
+                    sessions.forEach(session => {
+                        const sessionDate = new Date(session.lastMessageAt);
+                        let groupKey = '';
+                        
+                        if (sessionDate.toDateString() === today.toDateString()) {
+                            groupKey = '오늘';
+                        } else if (sessionDate.toDateString() === yesterday.toDateString()) {
+                            groupKey = '어제';
+                        } else {
+                            // 이번 주
+                            const weekAgo = new Date(today);
+                            weekAgo.setDate(weekAgo.getDate() - 7);
+                            if (sessionDate >= weekAgo) {
+                                groupKey = '이번 주';
+                            } else {
+                                // 이번 달
+                                const monthAgo = new Date(today);
+                                monthAgo.setMonth(monthAgo.getMonth() - 1);
+                                if (sessionDate >= monthAgo) {
+                                    groupKey = '이번 달';
+                                } else {
+                                    // 더 오래된 것
+                                    groupKey = '더 오래된';
+                                }
+                            }
+                        }
+                        
+                        if (!groups[groupKey]) {
+                            groups[groupKey] = [];
+                        }
+                        groups[groupKey].push(session);
+                    });
+                    
+                    // 각 그룹 내에서 시간순 정렬 (최신순)
+                    Object.keys(groups).forEach(key => {
+                        groups[key].sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt));
+                    });
+                    
+                    return groups;
+                };
+                
+                // 날짜별 그룹핑된 세션
+                const groupedUnpinnedSessions = computed(() => groupSessionsByDate(unpinnedSessions.value));
+                
                 const currentSession = ref(null); // 현재 선택된 세션
                 const messages = ref([]); // 현재 세션의 메시지 목록
                 const newMessage = ref(''); // 새 메시지 입력값
@@ -572,7 +629,7 @@
                     email,
                     chatSessions,
                     pinnedSessions,
-                    unpinnedSessions,
+                    groupedUnpinnedSessions,
                     currentSession,
                     messages,
                     newMessage,
