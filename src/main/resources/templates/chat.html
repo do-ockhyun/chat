@@ -4,301 +4,168 @@
     <title>채팅</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- <script src="https://cdn.tailwindcss.com"></script> -->
-     <script src="/tailwindcss.js"></script>
-    <!-- Vue 3 CDN 추가 -->
-    <!-- <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script> -->
     <script src="/vue.global.js"></script>
-    <!-- Axios CDN 추가 (API 통신용) -->
-    <!-- <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script> -->
     <script src="/axios.min.js"></script>
-    <!-- Marked.js CDN 추가 (마크다운 변환용) -->
-    <!-- <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script> -->
     <script src="/marked.min.js"></script>
     <style>
-        .suggestion-container {
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .suggestion-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        
-        .suggestion-btn {
-            padding: 8px 12px;
-            background-color: #EBF5FF;
-            border: 1px solid #BFDBFE;
-            color: #3B82F6;
-            border-radius: 16px;
-            font-size: 14px;
-            text-align: left;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .suggestion-btn:hover {
-            background-color: #DBEAFE;
-            border-color: #93C5FD;
-        }
-        
-        /* 로딩 애니메이션 관련 스타일 */
-        .loading-container {
-            display: flex;
-            align-items: center;
-            padding: 12px;
-        }
-        
-        .loading-dots {
-            display: flex;
-            align-items: center;
-        }
-        
-        .dot {
-            width: 8px;
-            height: 8px;
-            margin: 0 4px;
-            background-color: #3B82F6;
-            border-radius: 50%;
-            animation: pulse 1.5s infinite ease-in-out;
-        }
-        
-        .dot:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-        
-        .dot:nth-child(3) {
-            animation-delay: 0.4s;
-        }
-        
-        @keyframes pulse {
-            0%, 100% {
-                transform: scale(0.8);
-                opacity: 0.6;
-            }
-            50% {
-                transform: scale(1.2);
-                opacity: 1;
-            }
-        }
+      /* 이름 변경 모달 최소 스타일 */
+      .modal-bg {
+        position: fixed;
+        left: 0; top: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+      }
+      .modal-box {
+        background: #fff;
+        border-radius: 8px;
+        min-width: 260px;
+        padding: 24px 18px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      }
+      .modal-box h3 {
+        margin: 0 0 12px 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+      }
+      .modal-box input[type="text"] {
+        width: 100%;
+        margin-bottom: 14px;
+        padding: 8px 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+      }
+      .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+      .modal-actions button {
+        padding: 6px 16px;
+        border-radius: 4px;
+        border: 1px solid #eee;
+        background: #f3f3f3;
+        cursor: pointer;
+      }
+      .modal-actions button:last-child {
+        background: #2563eb;
+        color: #fff;
+        border: none;
+      }
     </style>
 </head>
-<body class="bg-gray-50">
-    <div id="app" class="flex h-screen">
+<body>
+    <div id="app" style="display: flex; min-height: 100vh;">
         <!-- 좌측 사이드바 - 채팅 목록 -->
-        <div class="w-64 bg-gray-800 text-white p-4 flex flex-col">
-            <div class="mb-4">
-              <button @click="createNewChat" class="w-full bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded-md text-sm">
-                + 새 채팅
-              </button>
+        <div style="width: 260px; min-width: 180px; border-right: 1px solid #eee;">
+            <div>
+                <button @click="createNewChat">+ 새 채팅</button>
             </div>
-            <div class="mb-6">
-                <h2 class="text-lg font-semibold mb-2">즐겨찾기</h2>
-                <ul v-if="pinnedSessions.length > 0" class="space-y-2">
-                    <li v-for="session in pinnedSessions" :key="session.id" class="relative group">
-                        <a href="#" 
-                           @click.prevent="loadChatSession(session.id)"
-                           class="block p-2 rounded-md hover:bg-gray-700 pr-10"초
-                           :class="{'bg-gray-700': currentSession && currentSession.id === session.id}">
-                            <div class="text-sm font-medium" v-text="session.title"></div>
-                            <div class="text-xs text-gray-400" v-text="formatDate(session.lastMessageAt)"></div>
+  
+            <div>
+                <h2>즐겨찾기</h2>
+                <ul v-if="pinnedSessions.length > 0">
+                    <li v-for="session in pinnedSessions" :key="session.id">
+                        <a href="#" @click.prevent="loadChatSession(session.id)" :class="{'active': currentSession && currentSession.id === session.id}">
+                            <div v-text="session.title"></div>
+                            <div v-text="formatDate(session.lastMessageAt)"></div>
                         </a>
-                        <!-- 점 3개 버튼 -->
-                        <button @click.stop="toggleContextMenu(session.id)"
-                                class="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-600 focus:outline-none"
-                                :aria-label="'채팅 옵션'">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <button @click.stop="toggleContextMenu(session.id)" :aria-label="'채팅 옵션'">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <circle cx="5" cy="12" r="2"/>
                                 <circle cx="12" cy="12" r="2"/>
                                 <circle cx="19" cy="12" r="2"/>
                             </svg>
                         </button>
-                        <!-- 컨텍스트 메뉴 -->
-                        <div v-if="contextMenuOpenId === session.id" class="absolute z-20 right-8 top-2 bg-white text-gray-800 rounded shadow-lg w-32 py-1 border border-gray-200">
-                            <button class="w-full text-left px-4 py-2 hover:bg-gray-100" @click="onPin(session)">
-                              {{ session.isPinned ? '고정 해제' : '상단 고정' }}
-                            </button>
-                            <button class="w-full text-left px-4 py-2 hover:bg-gray-100" @click="onRename(session)">이름 변경</button>
-                            <button v-if="!session.isShared" class="w-full text-left px-4 py-2 hover:bg-gray-100" @click="onShare(session)">공유</button>
-                            <button v-else class="w-full text-left px-4 py-2 hover:bg-gray-100" @click="onUnshare(session)">공유 해제</button>
-                            <button v-if="session.isShared" class="w-full text-left px-4 py-2 hover:bg-gray-100" @click="onCopyShareLink(session)">공유 링크 복사</button>
-                            <button class="w-full text-left px-4 py-2 hover:bg-red-100 text-red-500" @click="onDelete(session)">삭제</button>
+                        <div v-if="contextMenuOpenId === session.id">
+                            <button @click="onPin(session)">{{ session.isPinned ? '고정 해제' : '상단 고정' }}</button>
+                            <button @click="onRename(session)">이름 변경</button>
+                            <button v-if="!session.isShared" @click="onShare(session)">공유</button>
+                            <button v-else @click="onUnshare(session)">공유 해제</button>
+                            <button v-if="session.isShared" @click="onCopyShareLink(session)">공유 링크 복사</button>
+                            <button @click="onDelete(session)">삭제</button>
                         </div>
                     </li>
                 </ul>
-                <div v-else class="text-gray-400 text-sm px-2 py-1">고정된 채팅이 없습니다.</div>
+                <div v-else>고정된 채팅이 없습니다.</div>
             </div>
-            <div class="mb-6">
-                <h2 class="text-lg font-semibold mb-2">최근 항목</h2>
-                <!-- 임시 세션 표시 -->
-                <div v-if="chatSessions.filter(s => s.isTemporary).length > 0" class="mb-4">
-                    <div class="text-xs font-medium text-gray-400 uppercase tracking-wide px-2 mb-2">새 채팅</div>
-                    <ul class="space-y-1">
-                        <li v-for="session in chatSessions.filter(s => s.isTemporary)" :key="session.id" class="relative group">
-                            <a href="#" 
-                               @click.prevent="loadChatSession(session.id)"
-                               class="block p-2 rounded-md hover:bg-gray-700 pr-10 bg-gray-600"
-                               :class="{'bg-gray-700': currentSession && currentSession.id === session.id}">
-                                <div class="text-sm font-medium" v-text="session.title"></div>
-                                <div class="text-xs text-gray-300">메시지를 입력하세요...</div>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-                
-                <!-- 기존 세션들 -->
-                <div v-if="Object.keys(groupedUnpinnedSessions).length > 0" class="space-y-4">
-                    <div v-for="(group, date) in groupedUnpinnedSessions" :key="date" class="space-y-2">
-                        <div class="text-xs font-medium text-gray-400 uppercase tracking-wide px-2" v-text="date"></div>
-                        <ul class="space-y-1">
-                            <li v-for="session in group" :key="session.id" class="relative group">
-                                <a href="#" 
-                                   @click.prevent="loadChatSession(session.id)"
-                                   class="block p-2 rounded-md hover:bg-gray-700 pr-10"
-                                   :class="{'bg-gray-700': currentSession && currentSession.id === session.id}">
-                                    <div class="text-sm font-medium" v-text="session.title"></div>
-                                    <div class="text-xs text-gray-400" v-text="formatDate(session.lastMessageAt)"></div>
+            <div>
+                <h2>최근 항목</h2>
+                <div v-if="Object.keys(groupedUnpinnedSessions).length > 0">
+                    <div v-for="(group, date) in groupedUnpinnedSessions" :key="date">
+                        <div>{{ date }}</div>
+                        <ul>
+                            <li v-for="session in group" :key="session.id">
+                                <a href="#" @click.prevent="loadChatSession(session.id)" :class="{'active': currentSession && currentSession.id === session.id}">
+                                    <div v-text="session.title"></div>
+                                    <div v-text="formatDate(session.lastMessageAt)"></div>
                                 </a>
-                                <!-- 점 3개 버튼 -->
-                                <button @click.stop="toggleContextMenu(session.id)"
-                                        class="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-600 focus:outline-none"
-                                        :aria-label="'채팅 옵션'">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <button @click.stop="toggleContextMenu(session.id)" :aria-label="'채팅 옵션'">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <circle cx="5" cy="12" r="2"/>
                                         <circle cx="12" cy="12" r="2"/>
                                         <circle cx="19" cy="12" r="2"/>
                                     </svg>
                                 </button>
-                                <!-- 컨텍스트 메뉴 -->
-                                <div v-if="contextMenuOpenId === session.id" class="absolute z-20 right-8 top-2 bg-white text-gray-800 rounded shadow-lg w-32 py-1 border border-gray-200">
-                                    <button class="w-full text-left px-4 py-2 hover:bg-gray-100" @click="onPin(session)">
-                                      {{ session.isPinned ? '고정 해제' : '상단 고정' }}
-                                    </button>
-                                    <button class="w-full text-left px-4 py-2 hover:bg-gray-100" @click="onRename(session)">이름 변경</button>
-                                    <button v-if="!session.isShared" class="w-full text-left px-4 py-2 hover:bg-gray-100" @click="onShare(session)">공유</button>
-                                    <button v-else class="w-full text-left px-4 py-2 hover:bg-gray-100" @click="onUnshare(session)">공유 해제</button>
-                                    <button v-if="session.isShared" class="w-full text-left px-4 py-2 hover:bg-gray-100" @click="onCopyShareLink(session)">공유 링크 복사</button>
-                                    <button class="w-full text-left px-4 py-2 hover:bg-red-100 text-red-500" @click="onDelete(session)">삭제</button>
+                                <div v-if="contextMenuOpenId === session.id">
+                                    <button @click="onPin(session)">{{ session.isPinned ? '고정 해제' : '상단 고정' }}</button>
+                                    <button @click="onRename(session)">이름 변경</button>
+                                    <button v-if="!session.isShared" @click="onShare(session)">공유</button>
+                                    <button v-else @click="onUnshare(session)">공유 해제</button>
+                                    <button v-if="session.isShared" @click="onCopyShareLink(session)">공유 링크 복사</button>
+                                    <button @click="onDelete(session)">삭제</button>
                                 </div>
                             </li>
                         </ul>
                     </div>
                 </div>
-                <div v-if="Object.keys(groupedUnpinnedSessions).length === 0 && chatSessions.filter(s => s.isTemporary).length === 0" class="text-gray-400 text-sm px-2 py-1">최근 채팅이 없습니다.</div>
+                <div v-if="Object.keys(groupedUnpinnedSessions).length === 0">최근 채팅이 없습니다.</div>
             </div>
-            
-            <div class="pt-4 border-t border-gray-700">
-                <div class="flex items-center">
-                    <div class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center">
-                        <span class="text-sm" v-text="email.charAt(0)"></span>
-                    </div>
-                    <div class="ml-2">
-                        <div class="text-sm font-medium" v-text="email"></div>
-                    </div>
-                </div>
+            <div>
+                <div><span v-text="email.charAt(0)"></span></div>
+                <div v-text="email"></div>
             </div>
         </div>
-
         <!-- 메인 채팅 영역 -->
-        <div class="flex-1 flex flex-col" v-if="currentSession">
-            <!-- 채팅 헤더 -->
-            <div class="bg-white border-b p-4">
-                <h1 class="text-lg font-semibold" v-text="currentSession.title"></h1>
+        <div style="flex: 1; min-width: 0;" v-if="currentSession">
+            <div>
+                <h1 v-text="currentSession.title"></h1>
             </div>
-
-            <!-- 채팅 메시지 영역 -->
-            <div class="flex-1 overflow-y-auto p-4 space-y-4" ref="messageArea">
-                <!-- 메시지 목록 -->
-                <div v-for="message in messages" :key="message.id"
-                     :class="message.messageType === 'USER' ? 'flex justify-end' : 'flex justify-start'">
-                    <div :class="[
-                        'rounded-lg p-3 max-w-lg',
-                        message.messageType === 'USER' ? 'bg-blue-500 text-white' : 'bg-gray-100'
-                    ]">
-
-                        <!-- 일반 메시지 -->
+            <div ref="messageArea">
+                <div v-for="message in messages" :key="message.id" :class="[message.messageType === 'USER' ? 'user' : 'assistant']">
+                    <div :class="[message.messageType === 'USER' ? 'user' : 'assistant']">
                         <div v-if="!message.isSuggestions" v-html="renderMarkdown(message.content)"></div>
-                        
-                        <!-- 추천 질문 메시지 -->
-                        <div v-if="message.isSuggestions" class="suggestion-container">
-                            <p class="text-gray-700 mb-2">다음과 같은 질문을 해보세요:</p>
-                            <div class="suggestion-buttons">
-                                <button 
-                                    v-for="(suggestion, index) in message.suggestions" 
-                                    :key="index"
-                                    @click="usesuggestion(suggestion)"
-                                    class="suggestion-btn">
-                                    {{ suggestion }}
-                                </button>
-                            </div>
-                        </div>
                     </div>
                 </div>
-                
-                <!-- 로딩 상태 표시 -->
-                <div v-if="isLoading" class="flex justify-start">
-                    <div class="bg-gray-100 rounded-lg p-3 loading-container">
-                        <div class="loading-dots">
-                            <div class="dot"></div>
-                            <div class="dot"></div>
-                            <div class="dot"></div>
-                        </div>
-                        <span class="ml-2 text-gray-600 text-sm">응답 생성 중...</span>
+                <div v-if="isLoading">
+                    <div>
+                        <div></div>
+                        <span>응답 생성 중...</span>
                     </div>
                 </div>
             </div>
-
-            <!-- 메시지 입력 영역 -->
-            <div class="bg-white border-t p-4">
-                <form @submit.prevent="sendMessage" class="flex space-x-4">
-                    <input type="text" 
-                           v-model="newMessage"
-                           class="flex-1 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                           placeholder="메시지를 입력하세요...">
-                    <button type="submit" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600">
-                        전송
-                    </button>
+            <div>
+                <form @submit.prevent="sendMessage">
+                    <input type="text" v-model="newMessage" placeholder="메시지를 입력하세요...">
+                    <button type="submit">전송</button>
                 </form>
             </div>
         </div>
-        
-        <!-- 채팅 세션이 선택되지 않은 경우 -->
-        <div class="flex-1 flex flex-col items-center justify-center bg-gray-50" v-if="!currentSession">
-            <div class="text-center max-w-md px-4 py-8 bg-white rounded-lg shadow-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-blue-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                </svg>
-                <h2 class="text-2xl font-bold text-gray-800 mb-2">AI 대화 도우미에 오신 것을 환영합니다!</h2>
-                <p class="text-gray-600 mb-4">
-                    AI와 대화를 시작하려면 좌측의 '새 채팅' 버튼을 클릭하거나,
-                    기존 대화 목록에서 이어가고 싶은 대화를 선택해주세요.
-                </p>
-                <div class="flex justify-center mt-4">
-                    <button @click="createNewChat" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200">
-                        새 채팅 시작하기
-                    </button>
-                </div>
-                <div class="mt-6 text-sm text-gray-500">
-                    <p>질문, 정보 요청, 창의적인 아이디어 등 다양한 주제로 대화를 나눠보세요!</p>
-                </div>
-            </div>
-        </div>
-
         <!-- 이름 변경 모달 -->
-        <div v-if="renameModal.open" class="fixed inset-0 z-30 flex items-center justify-center bg-black bg-opacity-30">
-          <div class="bg-white rounded-lg shadow-lg p-6 w-80">
-            <h3 class="text-lg font-semibold mb-4">채팅방 이름 변경</h3>
-            <input type="text" v-model="renameModal.title" class="w-full border rounded px-3 py-2 mb-4" />
-            <div class="flex justify-end space-x-2">
-              <button @click="closeRenameModal" class="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300">취소</button>
-              <button @click="submitRename" class="px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-600">저장</button>
+        <div v-if="renameModal.open" class="modal-bg">
+          <div class="modal-box">
+            <h3>채팅방 이름 변경</h3>
+            <input type="text" v-model="renameModal.title" />
+            <div class="modal-actions">
+              <button @click="closeRenameModal">취소</button>
+              <button @click="submitRename">저장</button>
             </div>
           </div>
         </div>
     </div>
-
     <script th:inline="javascript">
         // Vue 3 앱 생성
         const { createApp, ref, onMounted, computed } = Vue;
@@ -382,13 +249,6 @@
                     });
                 };
                 
-                // 추천 질문 사용 함수
-                const usesuggestion = (suggestion) => {
-                    newMessage.value = suggestion;
-                    // 선택 사항: 자동으로 메시지 전송
-                    // sendMessage();
-                };
-                
                 // 채팅 세션 로드 함수
                 const loadChatSession = (sessionId) => {
                     renameModal.value.open = false;
@@ -408,20 +268,6 @@
                             messageType: 'ASSISTANT'
                         };
                         messages.value.push(welcomeMessage);
-                        
-                        // 추천 질문 메시지
-                        const suggestionsMessage = {
-                            id: Date.now() + 1,
-                            messageType: 'ASSISTANT',
-                            isSuggestions: true,
-                            suggestions: [
-                                "오늘의 날씨는 어때요?",
-                                "맛있는 저녁 메뉴 추천해주세요",
-                                "주식 투자에 대해 알려주세요",
-                                "효율적인 시간 관리 방법이 궁금해요"
-                            ]
-                        };
-                        messages.value.push(suggestionsMessage);
                         
                         // 스크롤을 맨 아래로 이동
                         setTimeout(() => {
@@ -447,20 +293,6 @@
                                     messageType: 'ASSISTANT'
                                 };
                                 messages.value.push(welcomeMessage);
-                                
-                                // 추천 질문 메시지 (새 형식)
-                                const suggestionsMessage = {
-                                    id: Date.now() + 1,
-                                    messageType: 'ASSISTANT',
-                                    isSuggestions: true,
-                                    suggestions: [
-                                        "오늘의 날씨는 어때요?",
-                                        "맛있는 저녁 메뉴 추천해주세요",
-                                        "주식 투자에 대해 알려주세요",
-                                        "효율적인 시간 관리 방법이 궁금해요"
-                                    ]
-                                };
-                                messages.value.push(suggestionsMessage);
                             }
                             
                             // 스크롤을 맨 아래로 이동
@@ -520,61 +352,53 @@
                                 title: content.length > 30 ? content.substring(0, 30) + '...' : content
                             })
                                 .then(response => {
-                                    const newSessionId = response.data;
-                                    
+                                    const newSessionId = response.data; // 세션 id만 반환됨
                                     // 메시지 전송
-                                    return axios.post(`/api/chat/${newSessionId}/messages`, { content });
-                                })
-                                .then(response => {
-                                    isLoading.value = false;
-                                    
-                                    // 임시 세션을 실제 세션으로 교체
-                                    const tempIndex = chatSessions.value.findIndex(s => s.id === currentSession.value.id);
-                                    if (tempIndex !== -1) {
-                                        const newSession = {
-                                            id: response.data.chatSessionId || response.data.id,
-                                            title: content.length > 30 ? content.substring(0, 30) + '...' : content,
-                                            lastMessageAt: response.data.createdAt,
-                                            isPinned: false,
-                                            isShared: false,
-                                            isTemporary: false
-                                        };
-                                        
-                                        chatSessions.value[tempIndex] = newSession;
-                                        currentSession.value = newSession;
-                                        
-                                        // 메시지 목록 업데이트 - 사용자 메시지와 AI 응답 모두 포함
-                                        const userMessage = {
-                                            id: Date.now() - 1, // AI 응답보다 이전 ID
-                                            content: content,
-                                            messageType: 'USER'
-                                        };
-                                        messages.value = [userMessage, response.data];
-                                    }
-                                    
-                                    // 목록 정렬
-                                    chatSessions.value.sort((a, b) => {
-                                        if (a.isPinned !== b.isPinned) return b.isPinned - a.isPinned;
-                                        return new Date(b.lastMessageAt) - new Date(a.lastMessageAt);
-                                    });
-                                    
-                                    setTimeout(() => {
-                                        if (messageArea.value) {
-                                            messageArea.value.scrollTop = messageArea.value.scrollHeight;
-                                        }
-                                    }, 0);
+                                    return axios.post(`/api/chat/${newSessionId}/messages`, { content })
+                                        .then(messageResponse => {
+                                            isLoading.value = false;
+                                            // 임시 세션을 실제 세션으로 교체
+                                            const tempIndex = chatSessions.value.findIndex(s => s.id === currentSession.value.id);
+                                            if (tempIndex !== -1) {
+                                                const newSession = {
+                                                    id: newSessionId, // 반드시 세션 id만!
+                                                    title: content.length > 30 ? content.substring(0, 30) + '...' : content,
+                                                    lastMessageAt: messageResponse.data.createdAt,
+                                                    isPinned: false,
+                                                    isShared: false,
+                                                    isTemporary: false
+                                                };
+                                                chatSessions.value[tempIndex] = newSession;
+                                                currentSession.value = newSession;
+                                                // 메시지 목록 업데이트 - 사용자 메시지와 AI 응답 모두 포함
+                                                const userMessage = {
+                                                    id: Date.now() - 1, // AI 응답보다 이전 ID
+                                                    content: content,
+                                                    messageType: 'USER'
+                                                };
+                                                messages.value = [userMessage, messageResponse.data];
+                                            }
+                                            // 목록 정렬
+                                            chatSessions.value.sort((a, b) => {
+                                                if (a.isPinned !== b.isPinned) return b.isPinned - a.isPinned;
+                                                return new Date(b.lastMessageAt) - new Date(a.lastMessageAt);
+                                            });
+                                            setTimeout(() => {
+                                                if (messageArea.value) {
+                                                    messageArea.value.scrollTop = messageArea.value.scrollHeight;
+                                                }
+                                            }, 0);
+                                        });
                                 })
                                 .catch(error => {
                                     isLoading.value = false;
                                     console.error('채팅 생성 또는 메시지 전송 중 오류 발생:', error);
-                                    
                                     // 에러 메시지 추가
                                     messages.value.push({
                                         id: Date.now(),
                                         content: "죄송합니다. 응답을 생성하는 중에 오류가 발생했습니다. 다시 시도해 주세요.",
                                         messageType: 'ASSISTANT'
                                     });
-                                    
                                     // 임시 세션 제거
                                     const tempIndex = chatSessions.value.findIndex(s => s.isTemporary);
                                     if (tempIndex !== -1) {
@@ -582,7 +406,6 @@
                                         currentSession.value = null;
                                         messages.value = [];
                                     }
-                                    
                                     setTimeout(() => {
                                         if (messageArea.value) {
                                             messageArea.value.scrollTop = messageArea.value.scrollHeight;
@@ -790,7 +613,6 @@
                     loadChatSession,
                     createNewChat,
                     sendMessage,
-                    usesuggestion,
                     renderMarkdown,
                     contextMenuOpenId,
                     toggleContextMenu,
