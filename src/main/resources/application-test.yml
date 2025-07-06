@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:oracle:thin:@//운영DB서버주소:1521/PRODDB
-    username: 운영DB계정
-    password: 운영DB비밀번호
+    url: jdbc:oracle:thin:@//테스트DB서버주소:1521/TESTDB
+    username: 테스트DB계정
+    password: 테스트DB비밀번호
     driver-class-name: oracle.jdbc.OracleDriver
   jpa:
     database-platform: org.hibernate.dialect.Oracle12cDialect
