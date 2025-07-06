@@ -37,3 +37,7 @@ build/
 *.trace.db
 
 
+### log
+*.log
+*.log.*
+
