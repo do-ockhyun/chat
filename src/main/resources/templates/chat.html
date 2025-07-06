@@ -237,6 +237,31 @@
                 const contextMenuOpenId = ref(null);
                 const renameModal = ref({ open: false, sessionId: null, title: '' });
                 
+                // 헬퍼 함수: 스크롤 맨 아래로 이동
+                function scrollToBottom() {
+                    setTimeout(() => {
+                        if (messageArea.value) {
+                            messageArea.value.scrollTop = messageArea.value.scrollHeight;
+                        }
+                    }, 0);
+                }
+                // 헬퍼 함수: 환영 메시지 추가
+                function addWelcomeMessage() {
+                    messages.value.push({
+                        id: Date.now(),
+                        content: "안녕하세요! AI 채팅 도우미입니다. 무엇을 도와드릴까요?",
+                        messageType: 'ASSISTANT'
+                    });
+                }
+                // 헬퍼 함수: 에러 메시지 추가
+                function addErrorMessage(msg) {
+                    messages.value.push({
+                        id: Date.now(),
+                        content: msg || "죄송합니다. 응답을 생성하는 중에 오류가 발생했습니다. 다시 시도해 주세요.",
+                        messageType: 'ASSISTANT'
+                    });
+                }
+                
                 // 날짜 포맷팅 함수
                 const formatDate = (dateString) => {
                     const date = new Date(dateString);
@@ -252,55 +277,22 @@
                 // 채팅 세션 로드 함수
                 const loadChatSession = (sessionId) => {
                     renameModal.value.open = false;
-                    
-                    // sessionId를 문자열로 변환
                     const sessionIdStr = String(sessionId);
-                    
-                    // 임시 세션인 경우
                     if (sessionIdStr.startsWith('temp_')) {
                         currentSession.value = chatSessions.value.find(s => s.id === sessionId);
                         messages.value = [];
-                        
-                        // 환영 메시지
-                        const welcomeMessage = {
-                            id: Date.now(),
-                            content: "안녕하세요! AI 채팅 도우미입니다. 무엇을 도와드릴까요?",
-                            messageType: 'ASSISTANT'
-                        };
-                        messages.value.push(welcomeMessage);
-                        
-                        // 스크롤을 맨 아래로 이동
-                        setTimeout(() => {
-                            if (messageArea.value) {
-                                messageArea.value.scrollTop = messageArea.value.scrollHeight;
-                            }
-                        }, 0);
+                        addWelcomeMessage();
+                        scrollToBottom();
                         return;
                     }
-                    
-                    // 실제 세션인 경우 API 호출
                     axios.get(`/api/chat/${sessionId}/messages`)
                         .then(response => {
                             messages.value = response.data;
                             currentSession.value = chatSessions.value.find(s => s.id === sessionId);
-                            
-                            // 메시지가 없는 경우 안내 메시지 표시
                             if (messages.value.length === 0) {
-                                // 환영 메시지
-                                const welcomeMessage = {
-                                    id: Date.now(),
-                                    content: "안녕하세요! AI 채팅 도우미입니다. 무엇을 도와드릴까요?",
-                                    messageType: 'ASSISTANT'
-                                };
-                                messages.value.push(welcomeMessage);
+                                addWelcomeMessage();
                             }
-                            
-                            // 스크롤을 맨 아래로 이동
-                            setTimeout(() => {
-                                if (messageArea.value) {
-                                    messageArea.value.scrollTop = messageArea.value.scrollHeight;
-                                }
-                            }, 0);
+                            scrollToBottom();
                         })
                         .catch(error => {
                             console.error('메시지 로드 중 오류 발생:', error);
@@ -329,15 +321,10 @@
                 // 메시지 전송 함수
                 const sendMessage = () => {
                     if (!newMessage.value.trim()) return;
-                    
                     const content = newMessage.value;
                     newMessage.value = '';
-                    
-                    // 현재 세션이 없거나 임시 세션인 경우
                     if (!currentSession.value || currentSession.value.isTemporary) {
-                        // 임시 세션이면 실제 세션 생성
                         if (currentSession.value && currentSession.value.isTemporary) {
-                            // 사용자 메시지 추가 (임시로)
                             const userMessage = {
                                 id: Date.now(),
                                 content: content,
@@ -345,23 +332,19 @@
                             };
                             messages.value.push(userMessage);
                             isLoading.value = true;
-                            
-                            // 실제 채팅방 생성
                             axios.post('/api/chat/new', {
                                 email: email.value,
                                 title: content.length > 30 ? content.substring(0, 30) + '...' : content
                             })
                                 .then(response => {
-                                    const newSessionId = response.data; // 세션 id만 반환됨
-                                    // 메시지 전송
+                                    const newSessionId = response.data;
                                     return axios.post(`/api/chat/${newSessionId}/messages`, { content })
                                         .then(messageResponse => {
                                             isLoading.value = false;
-                                            // 임시 세션을 실제 세션으로 교체
                                             const tempIndex = chatSessions.value.findIndex(s => s.id === currentSession.value.id);
                                             if (tempIndex !== -1) {
                                                 const newSession = {
-                                                    id: newSessionId, // 반드시 세션 id만!
+                                                    id: newSessionId,
                                                     title: content.length > 30 ? content.substring(0, 30) + '...' : content,
                                                     lastMessageAt: messageResponse.data.createdAt,
                                                     isPinned: false,
@@ -370,50 +353,33 @@
                                                 };
                                                 chatSessions.value[tempIndex] = newSession;
                                                 currentSession.value = newSession;
-                                                // 메시지 목록 업데이트 - 사용자 메시지와 AI 응답 모두 포함
                                                 const userMessage = {
-                                                    id: Date.now() - 1, // AI 응답보다 이전 ID
+                                                    id: Date.now() - 1,
                                                     content: content,
                                                     messageType: 'USER'
                                                 };
                                                 messages.value = [userMessage, messageResponse.data];
                                             }
-                                            // 목록 정렬
                                             chatSessions.value.sort((a, b) => {
                                                 if (a.isPinned !== b.isPinned) return b.isPinned - a.isPinned;
                                                 return new Date(b.lastMessageAt) - new Date(a.lastMessageAt);
                                             });
-                                            setTimeout(() => {
-                                                if (messageArea.value) {
-                                                    messageArea.value.scrollTop = messageArea.value.scrollHeight;
-                                                }
-                                            }, 0);
+                                            scrollToBottom();
                                         });
                                 })
                                 .catch(error => {
                                     isLoading.value = false;
                                     console.error('채팅 생성 또는 메시지 전송 중 오류 발생:', error);
-                                    // 에러 메시지 추가
-                                    messages.value.push({
-                                        id: Date.now(),
-                                        content: "죄송합니다. 응답을 생성하는 중에 오류가 발생했습니다. 다시 시도해 주세요.",
-                                        messageType: 'ASSISTANT'
-                                    });
-                                    // 임시 세션 제거
+                                    addErrorMessage();
                                     const tempIndex = chatSessions.value.findIndex(s => s.isTemporary);
                                     if (tempIndex !== -1) {
                                         chatSessions.value.splice(tempIndex, 1);
                                         currentSession.value = null;
                                         messages.value = [];
                                     }
-                                    setTimeout(() => {
-                                        if (messageArea.value) {
-                                            messageArea.value.scrollTop = messageArea.value.scrollHeight;
-                                        }
-                                    }, 0);
+                                    scrollToBottom();
                                 });
                         } else {
-                            // 세션이 없는 경우 새 채팅 생성
                             createNewChat();
                         }
                         return;
@@ -429,11 +395,7 @@
                     
                     isLoading.value = true;
                     
-                    setTimeout(() => {
-                        if (messageArea.value) {
-                            messageArea.value.scrollTop = messageArea.value.scrollHeight;
-                        }
-                    }, 0);
+                    scrollToBottom();
                     
                     axios.post(`/api/chat/${currentSession.value.id}/messages`, { content })
                         .then(response => {
@@ -453,25 +415,13 @@
                                 return new Date(b.lastMessageAt) - new Date(a.lastMessageAt);
                             });
                             
-                            setTimeout(() => {
-                                if (messageArea.value) {
-                                    messageArea.value.scrollTop = messageArea.value.scrollHeight;
-                                }
-                            }, 0);
+                            scrollToBottom();
                         })
                         .catch(error => {
                             isLoading.value = false;
                             console.error('메시지 전송 중 오류 발생:', error);
-                            messages.value.push({
-                                id: Date.now(),
-                                content: "죄송합니다. 응답을 생성하는 중에 오류가 발생했습니다. 다시 시도해 주세요.",
-                                messageType: 'ASSISTANT'
-                            });
-                            setTimeout(() => {
-                                if (messageArea.value) {
-                                    messageArea.value.scrollTop = messageArea.value.scrollHeight;
-                                }
-                            }, 0);
+                            addErrorMessage();
+                            scrollToBottom();
                         });
                 };
                 
