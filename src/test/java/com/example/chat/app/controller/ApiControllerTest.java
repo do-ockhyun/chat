@@ -35,22 +35,22 @@ class ApiControllerTest {
     @MockBean
     private ChatService chatService;
 
-    private static final String TEST_EMAIL = "user@example.com";
+    private static final String TEST_EMPNO = "EMP001";
 
     @Test
     @DisplayName("새로운 채팅 세션을 생성한다")
     void createNewChat() throws Exception {
         // given
         NewChatRequest request = new NewChatRequest();
-        request.setEmail(TEST_EMAIL);
+        request.setEmpNo(TEST_EMPNO);
         request.setTitle("Test Chat");
         ChatSessionResponse response = new ChatSessionResponse(1L, "Test Chat", null, null, false, false, null, null);
-        given(chatService.createSession(eq(request.getEmail()), eq(request.getTitle())))
+        given(chatService.createSession(eq(request.getEmpNo()), eq(request.getTitle())))
                 .willReturn(response);
 
         // 세션 설정
         MockHttpSession session = new MockHttpSession();
-        session.setAttribute("email", TEST_EMAIL);
+        session.setAttribute("empNo", TEST_EMPNO);
 
         // when & then
         mockMvc.perform(post("/api/chat/new")
@@ -70,12 +70,12 @@ class ApiControllerTest {
         ChatResponse message2 = new ChatResponse(2L, "Hi", null, null);
         given(chatService.findMessagesBySessionId(sessionId))
                 .willReturn(Arrays.asList(message1, message2));
-        given(chatService.isSessionOwner(eq(sessionId), eq(TEST_EMAIL)))
+        given(chatService.isSessionOwner(eq(sessionId), eq(TEST_EMPNO)))
                 .willReturn(true);
 
         // 세션 설정
         MockHttpSession session = new MockHttpSession();
-        session.setAttribute("email", TEST_EMAIL);
+        session.setAttribute("empNo", TEST_EMPNO);
 
         // when & then
         mockMvc.perform(get("/api/chat/{sessionId}/messages", sessionId)
@@ -97,12 +97,12 @@ class ApiControllerTest {
         ChatResponse response = new ChatResponse(1L, "GPT Response", null, null);
         given(chatService.sendMessage(eq(sessionId), eq(request.getContent())))
                 .willReturn(response);
-        given(chatService.isSessionOwner(eq(sessionId), eq(TEST_EMAIL)))
+        given(chatService.isSessionOwner(eq(sessionId), eq(TEST_EMPNO)))
                 .willReturn(true);
 
         // 세션 설정
         MockHttpSession session = new MockHttpSession();
-        session.setAttribute("email", TEST_EMAIL);
+        session.setAttribute("empNo", TEST_EMPNO);
 
         // when & then
         mockMvc.perform(post("/api/chat/{sessionId}/messages", sessionId)
@@ -119,12 +119,12 @@ class ApiControllerTest {
     void deleteSession() throws Exception {
         // given
         Long sessionId = 1L;
-        given(chatService.isSessionOwner(eq(sessionId), eq(TEST_EMAIL)))
+        given(chatService.isSessionOwner(eq(sessionId), eq(TEST_EMPNO)))
                 .willReturn(true);
 
         // 세션 설정
         MockHttpSession session = new MockHttpSession();
-        session.setAttribute("email", TEST_EMAIL);
+        session.setAttribute("empNo", TEST_EMPNO);
 
         // when & then
         mockMvc.perform(delete("/api/chat/{sessionId}", sessionId)

@@ -34,21 +34,21 @@ class ViewControllerTest {
     }
 
     @Test
-    @DisplayName("이메일을 입력하면 채팅 페이지로 이동한다")
+    @DisplayName("사번을 입력하면 채팅 페이지로 이동한다")
     void chat() throws Exception {
         // given
-        String email = "test@example.com";
+        String empNo = "EMP001";
         ChatSessionResponse session1 = new ChatSessionResponse(1L, "Chat 1", null, null, false, false, null, null);
         ChatSessionResponse session2 = new ChatSessionResponse(2L, "Chat 2", null, null, false, false, null, null);
-        given(chatService.findSessionsByUserId(email))
+        given(chatService.findSessionsByUserId(empNo))
                 .willReturn(Arrays.asList(session1, session2));
 
         // when & then
         mockMvc.perform(post("/")
-                        .param("email", email))
+                        .param("empNo", empNo))
                 .andExpect(status().isOk())
                 .andExpect(view().name("chat"))
-                .andExpect(model().attribute("email", email))
+                .andExpect(model().attribute("empNo", empNo))
                 .andExpect(model().attributeExists("chatSessions"));
     }
 } 
