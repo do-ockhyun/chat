@@ -181,48 +181,17 @@
                 // 날짜별 그룹핑 함수
                 const groupSessionsByDate = (sessions) => {
                     const groups = {};
-                    const today = new Date();
-                    const yesterday = new Date(today);
-                    yesterday.setDate(yesterday.getDate() - 1);
-                    
                     sessions.forEach(session => {
                         const sessionDate = new Date(session.lastMessageAt);
-                        let groupKey = '';
-                        
-                        if (sessionDate.toDateString() === today.toDateString()) {
-                            groupKey = '오늘';
-                        } else if (sessionDate.toDateString() === yesterday.toDateString()) {
-                            groupKey = '어제';
-                        } else {
-                            // 이번 주
-                            const weekAgo = new Date(today);
-                            weekAgo.setDate(weekAgo.getDate() - 7);
-                            if (sessionDate >= weekAgo) {
-                                groupKey = '이번 주';
-                            } else {
-                                // 이번 달
-                                const monthAgo = new Date(today);
-                                monthAgo.setMonth(monthAgo.getMonth() - 1);
-                                if (sessionDate >= monthAgo) {
-                                    groupKey = '이번 달';
-                                } else {
-                                    // 더 오래된 것
-                                    groupKey = '더 오래된';
-                                }
-                            }
-                        }
-                        
+                        const groupKey = sessionDate.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' });
                         if (!groups[groupKey]) {
                             groups[groupKey] = [];
                         }
                         groups[groupKey].push(session);
                     });
-                    
-                    // 각 그룹 내에서 시간순 정렬 (최신순)
                     Object.keys(groups).forEach(key => {
                         groups[key].sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt));
                     });
-                    
                     return groups;
                 };
                 
