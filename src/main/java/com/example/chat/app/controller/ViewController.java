@@ -29,14 +29,14 @@ public class ViewController {
     }
 
     @PostMapping("/")
-    public String chat(@RequestParam String email, Model model, HttpSession session) {
-        // 세션에 email 저장
-        session.setAttribute("email", email);
+    public String chat(@RequestParam String empNo, Model model, HttpSession session) {
+        // 세션에 empNo 저장
+        session.setAttribute("empNo", empNo);
         
-        List<ChatSessionResponse> chatSessions = chatService.findSessionsByUserId(email);
-        log.info("{} chatsessions: {}", email, chatSessions);
+        List<ChatSessionResponse> chatSessions = chatService.findSessionsByUserId(empNo);
+        log.info("{} chatsessions: {}", empNo, chatSessions);
 
-        model.addAttribute("email", email);
+        model.addAttribute("empNo", empNo);
         model.addAttribute("chatSessions", chatSessions);
         return "chat";
     }

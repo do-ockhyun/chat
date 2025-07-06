@@ -22,8 +22,8 @@ public class ChatServiceImpl implements ChatService {
     private final OpenAiService openAiService;
 
     @Override
-    public ChatSessionResponse createSession(String email, String title) {
-        ChatSession session = chatDataService.createSession(email, title);
+    public ChatSessionResponse createSession(String empNo, String title) {
+        ChatSession session = chatDataService.createSession(empNo, title);
         return convertToSessionResponse(session);
     }
 
@@ -64,10 +64,10 @@ public class ChatServiceImpl implements ChatService {
 
     @Override
     @Transactional(readOnly = true)
-    public boolean isSessionOwner(Long sessionId, String email) {
+    public boolean isSessionOwner(Long sessionId, String empNo) {
         try {
             ChatSession session = chatDataService.findSessionById(sessionId);
-            return session.getUserId().equals(email);
+            return session.getUserId().equals(empNo);
         } catch (IllegalArgumentException e) {
             return false;
         }
@@ -84,9 +84,9 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
-    public String shareSession(Long sessionId, String email) {
+    public String shareSession(Long sessionId, String empNo) {
         ChatSession session = chatDataService.findSessionById(sessionId);
-        if (!session.getUserId().equals(email)) {
+        if (!session.getUserId().equals(empNo)) {
             throw new IllegalArgumentException("권한이 없습니다.");
         }
         String shareToken = UUID.randomUUID().toString().replace("-", "");
@@ -95,9 +95,9 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
-    public void unshareSession(Long sessionId, String email) {
+    public void unshareSession(Long sessionId, String empNo) {
         ChatSession session = chatDataService.findSessionById(sessionId);
-        if (!session.getUserId().equals(email)) {
+        if (!session.getUserId().equals(empNo)) {
             throw new IllegalArgumentException("권한이 없습니다.");
         }
         chatDataService.unshareSession(sessionId);

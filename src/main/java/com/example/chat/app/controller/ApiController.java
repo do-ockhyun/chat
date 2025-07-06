@@ -27,18 +27,17 @@ public class ApiController {
     public ResponseEntity<Long> createNewChat(
             @Valid @RequestBody NewChatRequest request,
             HttpSession session) {
-        // 세션에서 이메일 가져오기
-        String email = (String) session.getAttribute("email");
-        if (email == null) {
+        // 세션에서 사번(empNo) 가져오기
+        String empNo = (String) session.getAttribute("empNo");
+        if (empNo == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        // 요청의 사번과 세션의 사번이 일치하는지 확인
+        if (!empNo.equals(request.getEmpNo())) {
             return ResponseEntity.badRequest().build();
         }
         
-        // 요청의 이메일과 세션의 이메일이 일치하는지 확인
-        if (!email.equals(request.getEmail())) {
-            return ResponseEntity.badRequest().build();
-        }
-        
-        ChatSessionResponse chatSession = chatService.createSession(request.getEmail(), request.getTitle());
+        ChatSessionResponse chatSession = chatService.createSession(request.getEmpNo(), request.getTitle());
         return ResponseEntity.ok(chatSession.getId());
     }
 
@@ -46,14 +45,14 @@ public class ApiController {
     public ResponseEntity<List<ChatResponse>> getMessages(
             @PathVariable Long sessionId,
             HttpSession session) {
-        // 세션에서 이메일 가져오기
-        String email = (String) session.getAttribute("email");
-        if (email == null) {
+        // 세션에서 사번(empNo) 가져오기
+        String empNo = (String) session.getAttribute("empNo");
+        if (empNo == null) {
             return ResponseEntity.badRequest().build();
         }
         
         // 세션 소유자 확인
-        if (!chatService.isSessionOwner(sessionId, email)) {
+        if (!chatService.isSessionOwner(sessionId, empNo)) {
             return ResponseEntity.badRequest().build();
         }
         
@@ -65,14 +64,14 @@ public class ApiController {
             @PathVariable Long sessionId,
             @Valid @RequestBody ChatRequest request,
             HttpSession session) {
-        // 세션에서 이메일 가져오기
-        String email = (String) session.getAttribute("email");
-        if (email == null) {
+        // 세션에서 사번(empNo) 가져오기
+        String empNo = (String) session.getAttribute("empNo");
+        if (empNo == null) {
             return ResponseEntity.badRequest().build();
         }
         
         // 세션 소유자 확인
-        if (!chatService.isSessionOwner(sessionId, email)) {
+        if (!chatService.isSessionOwner(sessionId, empNo)) {
             return ResponseEntity.badRequest().build();
         }
         
@@ -83,14 +82,14 @@ public class ApiController {
     public ResponseEntity<Void> deleteSession(
             @PathVariable Long sessionId,
             HttpSession session) {
-        // 세션에서 이메일 가져오기
-        String email = (String) session.getAttribute("email");
-        if (email == null) {
+        // 세션에서 사번(empNo) 가져오기
+        String empNo = (String) session.getAttribute("empNo");
+        if (empNo == null) {
             return ResponseEntity.badRequest().build();
         }
         
         // 세션 소유자 확인
-        if (!chatService.isSessionOwner(sessionId, email)) {
+        if (!chatService.isSessionOwner(sessionId, empNo)) {
             return ResponseEntity.badRequest().build();
         }
         
@@ -103,11 +102,11 @@ public class ApiController {
             @PathVariable Long sessionId,
             @RequestBody String title,
             HttpSession session) {
-        String email = (String) session.getAttribute("email");
-        if (email == null) {
+        String empNo = (String) session.getAttribute("empNo");
+        if (empNo == null) {
             return ResponseEntity.badRequest().build();
         }
-        if (!chatService.isSessionOwner(sessionId, email)) {
+        if (!chatService.isSessionOwner(sessionId, empNo)) {
             return ResponseEntity.badRequest().build();
         }
         chatService.updateSessionTitle(sessionId, title);
@@ -119,11 +118,11 @@ public class ApiController {
             @PathVariable Long sessionId,
             @RequestBody boolean isPinned,
             HttpSession session) {
-        String email = (String) session.getAttribute("email");
-        if (email == null) {
+        String empNo = (String) session.getAttribute("empNo");
+        if (empNo == null) {
             return ResponseEntity.badRequest().build();
         }
-        if (!chatService.isSessionOwner(sessionId, email)) {
+        if (!chatService.isSessionOwner(sessionId, empNo)) {
             return ResponseEntity.badRequest().build();
         }
         chatService.updateSessionPin(sessionId, isPinned);
@@ -132,11 +131,11 @@ public class ApiController {
 
     @GetMapping("/sessions")
     public ResponseEntity<List<ChatSessionResponse>> getSessions(HttpSession session) {
-        String email = (String) session.getAttribute("email");
-        if (email == null) {
+        String empNo = (String) session.getAttribute("empNo");
+        if (empNo == null) {
             return ResponseEntity.badRequest().build();
         }
-        List<ChatSessionResponse> sessions = chatService.findSessionsByUserId(email);
+        List<ChatSessionResponse> sessions = chatService.findSessionsByUserId(empNo);
         return ResponseEntity.ok(sessions);
     }
 
@@ -144,12 +143,12 @@ public class ApiController {
     public ResponseEntity<String> shareSession(
             @PathVariable Long sessionId,
             HttpSession session) {
-        String email = (String) session.getAttribute("email");
-        if (email == null) {
+        String empNo = (String) session.getAttribute("empNo");
+        if (empNo == null) {
             return ResponseEntity.badRequest().build();
         }
         try {
-            String shareToken = chatService.shareSession(sessionId, email);
+            String shareToken = chatService.shareSession(sessionId, empNo);
             return ResponseEntity.ok(shareToken);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -160,12 +159,12 @@ public class ApiController {
     public ResponseEntity<Void> unshareSession(
             @PathVariable Long sessionId,
             HttpSession session) {
-        String email = (String) session.getAttribute("email");
-        if (email == null) {
+        String empNo = (String) session.getAttribute("empNo");
+        if (empNo == null) {
             return ResponseEntity.badRequest().build();
         }
         try {
-            chatService.unshareSession(sessionId, email);
+            chatService.unshareSession(sessionId, empNo);
             return ResponseEntity.ok().build();
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();

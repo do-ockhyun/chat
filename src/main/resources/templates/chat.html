@@ -125,8 +125,8 @@
                 <div v-if="Object.keys(groupedUnpinnedSessions).length === 0">최근 채팅이 없습니다.</div>
             </div>
             <div>
-                <div><span v-text="email.charAt(0)"></span></div>
-                <div v-text="email"></div>
+                <div><span v-text="empNo.charAt(0)"></span></div>
+                <div v-text="empNo"></div>
             </div>
         </div>
         <!-- 메인 채팅 영역 -->
@@ -173,7 +173,7 @@
         const app = createApp({
             setup() {
                 // 반응형 상태 정의
-                const email = ref(/*[[${email}]]*/ '');
+                const empNo = ref(/*[[${empNo}]]*/ '');
                 const chatSessions = ref(/*[[${chatSessions}]]*/ []);
                 const pinnedSessions = computed(() => chatSessions.value.filter(s => s.isPinned));
                 const unpinnedSessions = computed(() => chatSessions.value.filter(s => !s.isPinned && !s.isTemporary));
@@ -302,7 +302,7 @@
                             messages.value.push(userMessage);
                             isLoading.value = true;
                             axios.post('/api/chat/new', {
-                                email: email.value,
+                                empNo: empNo.value,
                                 title: content.length > 30 ? content.substring(0, 30) + '...' : content
                             })
                                 .then(response => {
@@ -519,7 +519,7 @@
                 };
                 
                 return {
-                    email,
+                    empNo,
                     chatSessions,
                     pinnedSessions,
                     groupedUnpinnedSessions,

@@ -6,10 +6,10 @@ import java.util.List;
 
 public interface ChatService {
     // 채팅 세션 관련
-    ChatSessionResponse createSession(String email, String title);
+    ChatSessionResponse createSession(String empNo, String title);
     List<ChatSessionResponse> findSessionsByUserId(String userId);
     void deleteSession(Long sessionId);
-    boolean isSessionOwner(Long sessionId, String email);
+    boolean isSessionOwner(Long sessionId, String empNo);
     void updateSessionTitle(Long sessionId, String title);
     void updateSessionPin(Long sessionId, boolean isPinned);
 
@@ -19,7 +19,7 @@ public interface ChatService {
     List<ChatResponse> findMessagesByShareToken(String shareToken);
 
     // 공유 관련
-    String shareSession(Long sessionId, String email);
-    void unshareSession(Long sessionId, String email);
+    String shareSession(Long sessionId, String empNo);
+    void unshareSession(Long sessionId, String empNo);
     ChatSessionResponse findSharedSessionByToken(String shareToken);
 } 
